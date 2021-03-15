@@ -1,0 +1,5 @@
+data/*
+*.tiff
+.vscode/
+__pycache__/
+*.mid
