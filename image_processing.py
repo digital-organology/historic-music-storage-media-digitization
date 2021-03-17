@@ -418,19 +418,26 @@ class time_segmenter(object):
         else:
             return (degs_second, degs_first)
 
-    def find_all_shape_width(self):
+    def find_all_shape_width(self, tracks, filter_zero_degree = True):
         shape_min = []
         shape_max = []
         for shape in self._shapes.values():
             mini, maxi = self._process_shape(shape)
             shape_min.append(mini)
             shape_max.append(maxi)
-        
+
         # import pdb; pdb.set_trace()
         arr = np.column_stack((list(self._shape_ids), shape_min, shape_max))
         diff = arr[:,2] - arr[:,1]
-        diff[diff > 200] = 360 - diff[diff > 200]
-        arr = np.c_[arr, diff]
+
+        if filter_zero_degree:
+            arr = arr[diff < 200,:]
+            tracks = tracks[diff < 200]
+            diff = diff[diff < 200]
+        else:
+            diff[diff > 200] = 360 - diff[diff > 200]
+
+        arr = np.column_stack((arr, diff, tracks))
         return arr
 
 class MidiMaker(object):
@@ -559,8 +566,7 @@ def main():
     print("Calculating position of detected notes... ", end = "")
 
     ts = time_segmenter(shapes_dict, shapes_dict.keys(), config["center_x"], config["center_y"])
-    arr = ts.find_all_shape_width()
-    arr = np.column_stack((arr, assignments[:,1]))
+    arr = ts.find_all_shape_width(assignments[:,1], config["filter_zero_degree"])
 
     # Mutate the order to the way our midi writer expects them
     per = [4, 1, 2, 3, 0]
