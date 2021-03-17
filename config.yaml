@@ -6,6 +6,7 @@ default:
   number_beats: 144
   bandwidth: 8
   search_distance: 3
+  filter_zero_degree: True
   track_mappings:
     1: 43
     2: 45
