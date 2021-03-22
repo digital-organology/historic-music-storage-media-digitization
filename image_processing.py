@@ -13,6 +13,93 @@ from itertools import compress
 # Only needed to use helper method plot_polygon:
 import matplotlib.pyplot as plt 
 
+# class canny_center(object):
+    
+
+def getRadiusOutwards(src, axis, centre, length):
+    min = -1
+    max = -1
+    x = centre[0]
+    y = centre[1]
+    
+    pos = []
+    
+    for a in range(centre[0] if axis == "x" else centre[1], length-1): 
+
+        if axis == "x":
+            x = a
+        else:
+            y = a
+            
+        if any(src[y, x]) != 0: #NOT x,y!
+            pos.append((x,y))
+            break
+            
+    for a in range(centre[0]+1 if axis == "x" else centre[1]+1, 1, -1): 
+        if axis == "x":
+            x = a
+        else:
+            y = a
+            
+        if any(src[y, x]) != 0: #NOT x,y!
+            pos.append((x,y))
+            break
+    
+    return pos
+
+def getPointsOnEuclidSpiral(xMid, yMid, amount):
+    pos = []
+    for i in range(0, amount):
+        angle = 0.5*i
+        x = round(xMid + (1 + 1*angle) * math.cos(0.1*angle))
+        y = round(yMid + (1 + 1*angle) * math.sin(0.1*angle))
+        pos.append((x,y))
+    return pos
+
+def calculateCentre(src, dst, centreGuessed, lengths):
+    MINIMAL_RADIUS_OF_CIRCLE = 20
+    spiralPoints = getPointsOnEuclidSpiral(centreGuessed[0], centreGuessed[1], 400)
+    for point in spiralPoints:
+        #addAreaToImage(dst, point[0], point[1], 1, (128,255,128))
+        pointsToCheckX = getRadiusOutwards(src, "x", point, lengths[0])
+        pointsToCheckY = getRadiusOutwards(src, "y", point, lengths[1])
+        
+        middleX = round((pointsToCheckX[0][0]+pointsToCheckX[1][0]) / 2)
+        middleY = round((pointsToCheckY[0][1]+pointsToCheckY[1][1]) / 2)
+        
+        pointsToCheckX = getRadiusOutwards(src, "x", [middleX, middleY], lengths[0])
+        pointsToCheckY = getRadiusOutwards(src, "y", [middleX, middleY], lengths[1])
+        
+        r0 = abs(middleX-pointsToCheckX[0][0])
+        r1 = abs(middleX-pointsToCheckX[1][0])
+        r2 = abs(middleY-pointsToCheckY[0][1])
+        r3 = abs(middleY-pointsToCheckY[1][1])
+        
+        if r0 < MINIMAL_RADIUS_OF_CIRCLE or r1 < MINIMAL_RADIUS_OF_CIRCLE or r2 < MINIMAL_RADIUS_OF_CIRCLE  or r3 < MINIMAL_RADIUS_OF_CIRCLE:
+            continue
+        
+        if abs(r0-r1)+abs(r2-r3) < 5:
+            return [middleX, middleY]
+    return centreGuessed
+
+def canny_threshold(img_color, img_greyscale, threshhold):
+    img_blur = cv2.blur(img_greyscale, (3,3))
+    detected_edges = cv2.Canny(img_blur, threshhold, threshhold * 3, 3)
+    mask = detected_edges != 0
+    dst = img_color * (mask[:,:,None].astype(img_color.dtype))
+    return dst
+
+def canny_and_center(image, thresh):
+    img_grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    img = canny_threshold(image, img_grey, thresh)
+    imageHeight, imageWidth, imageChannels = img.shape
+    centreGuessed = [round(imageWidth/2), round(imageHeight/2)]
+    center_x, center_y = calculateCentre(img, img.copy(), centreGuessed, (imageWidth, imageHeight))
+    out = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return out, center_x, center_y
+
+
+
 class image_processor(object):
     _search_distance = 0
     _y_limit = 0
@@ -429,7 +516,7 @@ class time_segmenter(object):
         # import pdb; pdb.set_trace()
         arr = np.column_stack((list(self._shape_ids), shape_min, shape_max))
         diff = arr[:,2] - arr[:,1]
-        diff[diff > 200] = 360 - diff[diff > 200]
+        # diff[diff > 200] = 360 - diff[diff > 200]
         arr = np.c_[arr, diff]
         return arr
 
@@ -522,12 +609,17 @@ def main():
 
     # Read image in
     # picture = cv2.imread("data/test_rotated.tiff", cv2.IMREAD_GRAYSCALE)
-    picture = cv2.imread(args.input, cv2.IMREAD_GRAYSCALE)
+    picture = cv2.imread(args.input)
+
+    print("{:>10}".format("OK"))
+
+    print("Applying canny algorithm and finding center... ", sep = "", end = "")
+
+    picture, center_x, center_y = canny_and_center(picture, config["threshold"])
 
     print("{:>10}".format("OK"))
 
     print("Finding connected components... ", end = "")
-
 
     # Create labels
     processor = image_processor(picture, config["search_distance"])
@@ -545,8 +637,8 @@ def main():
     # shapes_dict, assignments, color_image = processor.extract_shapes(outer_radius, inner_radius, center_x, center_y, 10)
     shapes_dict, assignments, color_image = processor.extract_shapes(config["outer_radius"],
                                                                      config["inner_radius"],
-                                                                     config["center_x"],
-                                                                     config["center_y"],
+                                                                     center_x,
+                                                                     center_y,
                                                                      config["bandwidth"])
 
     print("{:>10}".format("OK"))
@@ -558,13 +650,17 @@ def main():
 
     print("Calculating position of detected notes... ", end = "")
 
-    ts = time_segmenter(shapes_dict, shapes_dict.keys(), config["center_x"], config["center_y"])
+    ts = time_segmenter(shapes_dict, shapes_dict.keys(), center_x, center_y)
     arr = ts.find_all_shape_width()
+
     arr = np.column_stack((arr, assignments[:,1]))
 
     # Mutate the order to the way our midi writer expects them
     per = [4, 1, 2, 3, 0]
     arr[:] = arr[:,per]
+
+    np.savetxt("arr.txt", arr, fmt = "%1.3f", delimiter = ",")
+
 
     print("{:>10}".format("OK"))
 
@@ -577,7 +673,7 @@ def main():
     print("{:>10}".format("OK"))
 
     #np.save("data/processed_shapes.npy", arr)
-    #np.savetxt("angles.txt", arr, fmt = "%1.3f", delimiter = ",")
+    
 
 if __name__ == "__main__":
     main()
