@@ -83,7 +83,11 @@ def main():
                                                                                 config["inner_radius"],
                                                                                 center_x,
                                                                                 center_y,
-                                                                                config["bandwidth"])
+                                                                                config["bandwidth"],
+                                                                                config["first_track"], 
+                                                                                config["track_width"],
+                                                                                img_grayscale,
+                                                                                compat_mode = True)
 
     print("{:>10}".format("OK"))
 
@@ -102,6 +106,10 @@ def main():
     # Mutate the order to the way our midi writer expects them
     per = [4, 1, 2, 3, 0]
     arr[:] = arr[:,per]
+
+    too_high = arr[:, 0] <= config["n_tracks"]
+
+    arr = arr[too_high, :]
 
     # np.savetxt("arr.txt", arr, fmt = "%1.3f", delimiter = ",")
 

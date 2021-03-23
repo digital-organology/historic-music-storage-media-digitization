@@ -74,7 +74,7 @@ def label_image(img, distance):
     img = img.astype(int)
 
     if distance == 1:
-        img = measure.label(img, background = 0)
+        img = measure.label(img, background = 0, connectivity = 2)
     else:
         # Multiply everything by -1 so that unprocessed pixels will be -1 while background is still 0
         img = img * -1
