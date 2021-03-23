@@ -1,12 +1,9 @@
 default:
   inner_radius: 3.5
   outer_radius: 11.8
-  center_x: 2900
-  center_y: 2006
   number_beats: 144
   bandwidth: 8
-  search_distance: 3
-  filter_zero_degree: True
+  search_distance: 1
   track_mappings:
     1: 43
     2: 45
@@ -37,3 +34,4 @@ default:
     27: 81
     28: 82
     29: 83
+    30: 84
