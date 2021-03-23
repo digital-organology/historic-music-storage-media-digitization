@@ -98,6 +98,7 @@ def main():
 
     arr = np.column_stack((arr, assignments[:,1]))
 
+
     # Mutate the order to the way our midi writer expects them
     per = [4, 1, 2, 3, 0]
     arr[:] = arr[:,per]
