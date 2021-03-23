@@ -4,7 +4,19 @@ import numpy as np
 def _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat):
     start_time = (360 - data_array[:,2]) / degrees_per_beat
     duration = data_array[:,3] / degrees_per_beat
-    pitch = np.vectorize(tracks_to_notes.get)(data_array[:,0])
+
+    pitch = data_array[:,0]
+    keys = np.array(list(tracks_to_notes.keys()))
+    values = np.array(list(tracks_to_notes.values()))
+
+    sidx = keys.argsort()
+
+    ks = keys[sidx]
+    vs = values[sidx]
+
+    pitch = vs[np.searchsorted(ks, pitch)]
+
+    # pitch = np.vectorize(tracks_to_notes.get)(data_array[:,0])
     return (start_time, duration, pitch)
 
 def create_midi(data_array, tracks_to_notes, beats, out_file):

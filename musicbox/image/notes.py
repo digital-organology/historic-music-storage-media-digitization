@@ -1,4 +1,5 @@
 from musicbox.helpers import gen_lut
+import musicbox.image.label
 import numpy as np
 import math
 from scipy.spatial import distance
@@ -6,16 +7,55 @@ from sklearn.cluster import MeanShift
 from itertools import compress
 import cv2
 
-def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth):
+def _fix_empty_tracks(data_array, first_track, track_width):
+    mean_dists = []
+    for i in np.unique(data_array[:,1]):
+        vals = data_array[np.where(data_array[:,1] == i)]
+        mean_dists.append([i, np.mean(vals[:,2])])
+
+    # Convert to numpy array and insert dummy first row for the closest track to the center
+    mean_dists = np.array(mean_dists)
+    mean_dists = np.insert(mean_dists, 0, np.array((1, first_track)), 0)
+
+    # Iterate over the array and do the following for each track:
+    # Calculate the distance to the previous track and divide this by the average track width
+    # Round this. Assign the track number of the previous track plus the result of the rounding.
+
+    for i in range(1, mean_dists.shape[0]):
+        dist = mean_dists[i, 1] - mean_dists[i - 1, 1]
+        track_gap = round(dist / track_width)
+        mean_dists[i, 0] = mean_dists[i - 1, 0] + track_gap
+
+    # Now we replace the track values in the original array with the correct ones
+    # As tracks start with 1 and we use these as index to our mappings we dont even need to remove the dummy first row :-)
+
+    copy = data_array.copy()
+    for track in np.unique(data_array[:,1]):
+        copy[:,1][data_array[:,1] == track] = mean_dists[int(track), 0]
+
+    copy = np.delete(copy, 2, 1)
+    return copy
+
+
+
+def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False):
+        # img_greyscale is only needed when compat_mode is set to True.
+        # We will use it to run another pass detecting shapes with a high search area to find the outermost border
+
         # First of let us find the outer border
         # This should be the first found shape, meaning the one with the lowest index (apart from 0)
 
-        indices = np.unique(img)
+        if compat_mode:
+            labels, labels_color = musicbox.image.label.label_image(img_grayscale, 5)
+        else:
+            labels = img.copy()
+
+        indices = np.unique(labels)
         outer_border_id = indices[indices != 0].min()
         
         # Transform it into a polygon
 
-        outer_border = np.argwhere(img == outer_border_id).astype(np.int32)
+        outer_border = np.argwhere(labels == outer_border_id).astype(np.int32)
 
         # Switch x and y around
         outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
@@ -120,7 +160,11 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth):
 
         classes = copy + 1
 
-        assignments = np.column_stack((shape_ids, classes))
+        # Fix empty tracks
+
+        data_array = np.column_stack((shape_ids, classes, inner_distances))
+
+        assignments = _fix_empty_tracks(data_array, first_track, track_width)
 
         # Create colored output
 
