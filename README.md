@@ -1,4 +1,4 @@
-# Music box disc digitalization
+# Music box disc digitization
 
 This repository contains code to automatically generate a midi file out of a high resolution image of discs for old music boxes.
 This is an in-progress project at the Digital Organology group of the Museum of Musical Instruments at Leipzig University.
