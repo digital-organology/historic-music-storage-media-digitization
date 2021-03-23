@@ -1,0 +1,8 @@
+numpy
+opencv
+yaml
+scipy
+scikit-image
+scikit-learn
+midiutil
+matplotlib
