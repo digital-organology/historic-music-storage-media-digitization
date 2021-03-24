@@ -1,1 +1,1 @@
-__all__ = ["covnert", "midi"]
+__all__ = ["convert", "midi"]
