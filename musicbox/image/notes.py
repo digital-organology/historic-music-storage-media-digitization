@@ -38,8 +38,8 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 
-def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False):
-        # img_greyscale is only needed when compat_mode is set to True.
+def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False, exact_mode = False):
+        # img_grayscale is only needed when compat_mode is set to True.
         # We will use it to run another pass detecting shapes with a high search area to find the outermost border
 
         # First of let us find the outer border
@@ -116,17 +116,28 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
         centers = list(compress(centers, keep))
 
         # We can now go ahead and calculate the distances between each point and the outer/inner border
+        # As we might have some shapes that are incomplete (but are notes we want to match correctly)
+        # we also employ a mechanism to calculate their position that does not rely on correctly identifies center points
 
         outer_distances = [] # We do not actually use this right now
         inner_distances = []
-        for point in centers:
-            pnt = [(point[0], point[1])]
-            # inner_distance = distance.cdist(pnt, inner_border).min()
-            inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
-            outer_distance = distance.cdist(pnt, outer_border).min()
-            sum_distance = outer_distance + inner_distance
-            outer_distances.append(outer_distance / sum_distance)
-            inner_distances.append(inner_distance / sum_distance)
+
+        if exact_mode:
+            for shape in shapes:
+                inner_distance = distance.cdist(shape, [(center_x, center_y)]).min()
+                outer_distance = distance.cdist(shape, outer_border).min()
+                sum_distance = outer_distance + inner_distance
+                outer_distances.append(outer_distance / sum_distance)
+                inner_distances.append(inner_distance / sum_distance)
+        else:
+            for point in centers:
+                pnt = [(point[0], point[1])]
+                # inner_distance = distance.cdist(pnt, inner_border).min()
+                inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
+                outer_distance = distance.cdist(pnt, outer_border).min()
+                sum_distance = outer_distance + inner_distance
+                outer_distances.append(outer_distance / sum_distance)
+                inner_distances.append(inner_distance / sum_distance)
 
         # Now we may start clustering these points
 

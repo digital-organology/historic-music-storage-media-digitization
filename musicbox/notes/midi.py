@@ -32,6 +32,8 @@ def create_midi(data_array, tracks_to_notes, beats, out_file):
                 eventtime_is_ticks=False  # default
                 )
 
+    midi_obj.addTempo(0, 0, 130)
+
     #for track_id in tpm.tracks_to_note.keys():
     #    midi_obj.addTempo(track_id, time=0, tempo=tpm.tempo)
 

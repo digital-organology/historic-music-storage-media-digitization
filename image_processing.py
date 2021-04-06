@@ -55,7 +55,7 @@ def main():
 
     print("Applying canny algorithm and finding center... ", sep = "", end = "")
 
-    canny_image = musicbox.image.canny.canny_threshold(picture, 90)
+    canny_image = musicbox.image.canny.canny_threshold(picture, config["canny_low"], config["canny_high"])
 
     center_x, center_y = musicbox.image.center.calculate_center(canny_image)
 
@@ -87,7 +87,8 @@ def main():
                                                                                 config["first_track"], 
                                                                                 config["track_width"],
                                                                                 img_grayscale,
-                                                                                compat_mode = True)
+                                                                                compat_mode = True,
+                                                                                exact_mode = True)
 
     print("{:>10}".format("OK"))
 
