@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt 
+import cv2
 
 def gen_lut():
         """
@@ -24,3 +25,19 @@ def plot_polygon(pic, polygon):
     bg_image[polygon[:,1], polygon[:,0]] = 1
     plt.imshow(bg_image)
     plt.show()
+
+def picture_to_blackwhite(picture):
+    grayScale = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
+    (_, bwImage) = cv2.threshold(grayScale, 127, 255, cv2.THRESH_BINARY)
+    return bwImage
+
+def show_difference(picture_file1, picture_file2, outf, color_dif=True):
+    picture1 = cv2.imread(picture_file1)
+    picture2 = cv2.imread(picture_file2)
+    if not color_dif:#disregard different coloring
+        picture1 = picture_to_blackwhite(picture1)
+        picture2 = picture_to_blackwhite(picture2)
+    mask_equality = picture1 == picture2
+    picture1[mask_equality] = 0
+    cv2.imwrite(outf, picture1)
+    #assert (picture1 == picture2).all()

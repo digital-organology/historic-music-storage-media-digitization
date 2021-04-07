@@ -1,6 +1,6 @@
 numpy
-opencv
-yaml
+opencv-python
+PyYAML
 scipy
 scikit-image
 scikit-learn

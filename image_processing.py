@@ -70,7 +70,7 @@ def main():
 
     print("{:>10}".format("OK"))
 
-    if not args.shapes_file is None:
+    if args.shapes_file:
         print("Writing image of detected shapes to '", args.shapes_file, "'... ", sep = "", end = "")
         cv2.imwrite(args.shapes_file, labels_image)
         print("{:>10}".format("OK"))

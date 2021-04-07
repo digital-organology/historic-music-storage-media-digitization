@@ -39,160 +39,160 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False):
-        # img_greyscale is only needed when compat_mode is set to True.
-        # We will use it to run another pass detecting shapes with a high search area to find the outermost border
+    # img_greyscale is only needed when compat_mode is set to True.
+    # We will use it to run another pass detecting shapes with a high search area to find the outermost border
 
-        # First of let us find the outer border
-        # This should be the first found shape, meaning the one with the lowest index (apart from 0)
+    # First of let us find the outer border
+    # This should be the first found shape, meaning the one with the lowest index (apart from 0)
 
-        if compat_mode:
-            labels, labels_color = musicbox.image.label.label_image(img_grayscale, 5)
+    if compat_mode:
+        labels, labels_color = musicbox.image.label.label_image(img_grayscale, 5)
+    else:
+        labels = img.copy()
+
+    indices = np.unique(labels)
+    outer_border_id = indices[indices != 0].min()
+    
+    # Transform it into a polygon
+
+    outer_border = np.argwhere(labels == outer_border_id).astype(np.int32)
+
+    # Switch x and y around
+    outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
+
+    # To find the inner border we calculate the distance from the center
+    # to the outer border. We can then calculate a approximate circular inner border.
+
+    outer_radius_calc = distance.cdist([(center_x, center_y)], outer_border).min()
+    inner_radius_calc = outer_radius_calc / outer_radius * inner_radius
+
+    # Create a circle, this could surely be done more efficient
+
+    bg = np.zeros_like(img).astype(np.uint8)
+    circle = cv2.circle(bg, (center_x, center_y), round(inner_radius_calc), 1)
+    
+    inner_border = np.argwhere(circle == 1).astype(np.int32)
+    inner_border[:,[0, 1]] = inner_border[:, [1, 0]]
+
+    # Great, now we convert all found shapes to polygons
+    # To do this, we filter them by size first
+
+    unique, counts = np.unique(img, return_counts = True)
+    
+    median = np.median(counts)
+    lower_bound = median / 3
+    upper_bound = 3 * median
+
+    shape_candidates = np.where(np.logical_and(counts >= lower_bound, counts <= upper_bound))
+    shape_ids = unique[shape_candidates]
+
+    # We convert them to polygons next and while we're at it find the center point for each one
+
+    shapes = []
+    centers = []
+    for shape_id in shape_ids:
+        contour = np.argwhere(img == shape_id).astype(np.uint32)
+        point = np.mean(contour, 0).astype(np.uint32)
+        point = np.array([point[1], point[0]])
+        contour[:, [0, 1]] = contour[:, [1, 0]]
+        shapes.append(contour)
+        centers.append(point)
+
+    # We can use the center points to determine if the shape are inside the inner
+    # border or outside
+    # We calculate the distance to the center, if it is smaller than the inner radius we drop the point
+    # otherwise we keep it
+
+    keep = []
+    for point in centers:
+        center_dist = distance.cdist([point], [(center_x, center_y)])[0][0]
+        if center_dist < inner_radius_calc:
+            keep.append(False)
         else:
-            labels = img.copy()
+            keep.append(True)
+    
+    shape_ids = shape_ids[keep]
+    shapes = list(compress(shapes, keep))
+    centers = list(compress(centers, keep))
 
-        indices = np.unique(labels)
-        outer_border_id = indices[indices != 0].min()
-        
-        # Transform it into a polygon
+    # We can now go ahead and calculate the distances between each point and the outer/inner border
 
-        outer_border = np.argwhere(labels == outer_border_id).astype(np.int32)
+    outer_distances = [] # We do not actually use this right now
+    inner_distances = []
+    for point in centers:
+        pnt = [(point[0], point[1])]
+        # inner_distance = distance.cdist(pnt, inner_border).min()
+        inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
+        outer_distance = distance.cdist(pnt, outer_border).min()
+        sum_distance = outer_distance + inner_distance
+        outer_distances.append(outer_distance / sum_distance)
+        inner_distances.append(inner_distance / sum_distance)
 
-        # Switch x and y around
-        outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
+    # Now we may start clustering these points
 
-        # To find the inner border we calculate the distance from the center
-        # to the outer border. We can then calculate a approximate circular inner border.
+    data = np.array(inner_distances)
+    data = data * 1000
+    data = np.column_stack((data, np.zeros(len(data))))
+    data = data.astype(int)
+    ms = MeanShift(bandwidth = bwidth, bin_seeding = True)
+    ms.fit(data)
+    classes = ms.labels_
+    
+    # We now go ahead and sort the clusters in ascending order beginning on the inside
 
-        outer_radius_calc = distance.cdist([(center_x, center_y)], outer_border).min()
-        inner_radius_calc = outer_radius_calc / outer_radius * inner_radius
+    inner_assignments = np.column_stack((classes, np.array(inner_distances)))
+    cluster_ids = np.unique(inner_assignments[:,0])
+    means = []
+    for cluster in cluster_ids:
+        tmp = inner_assignments[np.where(inner_assignments[:,0] == cluster)]
+        means.append(np.mean(tmp[:,1]))
 
-        # Create a circle, this could surely be done more efficient
+    cluster_means = np.column_stack((cluster_ids, means))
+    cluster_means = cluster_means[cluster_means[:,1].argsort()]
 
-        bg = np.zeros_like(img).astype(np.uint8)
-        circle = cv2.circle(bg, (center_x, center_y), round(inner_radius_calc), 1)
-        
-        inner_border = np.argwhere(circle == 1).astype(np.int32)
-        inner_border[:,[0, 1]] = inner_border[:, [1, 0]]
+    # Magic. Don't touch.
+    # Change old cluster assignments to the ones
+    # sorted by distance from the inner circle
+    # thus creating a hierarchically sorted order 
+    copy = np.zeros_like(classes)
+    for cluster in np.unique(classes):
+        copy[classes == cluster] = np.argwhere(cluster_means[:,0] == cluster)[0][0]
 
-        # Great, now we convert all found shapes to polygons
-        # To do this, we filter them by size first
+    classes = copy + 1
 
-        unique, counts = np.unique(img, return_counts = True)
-        
-        median = np.median(counts)
-        lower_bound = median / 3
-        upper_bound = 3 * median
+    # Fix empty tracks
 
-        shape_candidates = np.where(np.logical_and(counts >= lower_bound, counts <= upper_bound))
-        shape_ids = unique[shape_candidates]
+    data_array = np.column_stack((shape_ids, classes, inner_distances))
 
-        # We convert them to polygons next and while we're at it find the center point for each one
+    assignments = _fix_empty_tracks(data_array, first_track, track_width)
 
-        shapes = []
-        centers = []
-        for shape_id in shape_ids:
-            contour = np.argwhere(img == shape_id).astype(np.uint32)
-            point = np.mean(contour, 0).astype(np.uint32)
-            point = np.array([point[1], point[0]])
-            contour[:, [0, 1]] = contour[:, [1, 0]]
-            shapes.append(contour)
-            centers.append(point)
+    # Create colored output
 
-        # We can use the center points to determine if the shape are inside the inner
-        # border or outside
-        # We calculate the distance to the center, if it is smaller than the inner radius we drop the point
-        # otherwise we keep it
+    image = img.copy()
+    mask = np.isin(image, shape_ids)
+    mask = np.invert(mask)
+    np.putmask(image, mask, 0)
 
-        keep = []
-        for point in centers:
-            center_dist = distance.cdist([point], [(center_x, center_y)])[0][0]
-            if center_dist < inner_radius_calc:
-                keep.append(False)
-            else:
-                keep.append(True)
-        
-        shape_ids = shape_ids[keep]
-        shapes = list(compress(shapes, keep))
-        centers = list(compress(centers, keep))
+    inner_border_label = max(classes) + 1
+    outer_border_label = inner_border_label + 1
 
-        # We can now go ahead and calculate the distances between each point and the outer/inner border
+    image[inner_border[:,1], inner_border[:,0]] = inner_border_label
 
-        outer_distances = [] # We do not actually use this right now
-        inner_distances = []
-        for point in centers:
-            pnt = [(point[0], point[1])]
-            # inner_distance = distance.cdist(pnt, inner_border).min()
-            inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
-            outer_distance = distance.cdist(pnt, outer_border).min()
-            sum_distance = outer_distance + inner_distance
-            outer_distances.append(outer_distance / sum_distance)
-            inner_distances.append(inner_distance / sum_distance)
+    image[outer_border[:,1], outer_border[:,0]] = outer_border_label
 
-        # Now we may start clustering these points
+    # Does not work but would probably be much faster :(
+    # assignment_dict = zip(self._shape_ids, assignments)
+    # image = [assignment_dict[i] for i in image]
 
-        data = np.array(inner_distances)
-        data = data * 1000
-        data = np.column_stack((data, np.zeros(len(data))))
-        data = data.astype(int)
-        ms = MeanShift(bandwidth = bwidth, bin_seeding = True)
-        ms.fit(data)
-        classes = ms.labels_
-        
-        # We now go ahead and sort the clusters in ascending order beginning on the inside
+    for shape in shape_ids:
+        index = np.where(shape_ids == shape)
+        image[image == shape] = classes[index]
 
-        inner_assignments = np.column_stack((classes, np.array(inner_distances)))
-        cluster_ids = np.unique(inner_assignments[:,0])
-        means = []
-        for cluster in cluster_ids:
-            tmp = inner_assignments[np.where(inner_assignments[:,0] == cluster)]
-            means.append(np.mean(tmp[:,1]))
+    lut = gen_lut()
 
-        cluster_means = np.column_stack((cluster_ids, means))
-        cluster_means = cluster_means[cluster_means[:,1].argsort()]
+    color_image = image.astype(np.uint8)
+    color_image = cv2.LUT(cv2.merge((color_image, color_image, color_image)), lut)
 
-        # Magic. Don't touch.
-        # Change old cluster assignments to the ones
-        # sorted by distance from the inner circle
-        # thus creating a hierarchically sorted order 
-        copy = np.zeros_like(classes)
-        for cluster in np.unique(classes):
-            copy[classes == cluster] = np.argwhere(cluster_means[:,0] == cluster)[0][0]
+    shapes_dict = dict(zip(shape_ids, shapes))
 
-        classes = copy + 1
-
-        # Fix empty tracks
-
-        data_array = np.column_stack((shape_ids, classes, inner_distances))
-
-        assignments = _fix_empty_tracks(data_array, first_track, track_width)
-
-        # Create colored output
-
-        image = img.copy()
-        mask = np.isin(image, shape_ids)
-        mask = np.invert(mask)
-        np.putmask(image, mask, 0)
-
-        inner_border_label = max(classes) + 1
-        outer_border_label = inner_border_label + 1
-
-        image[inner_border[:,1], inner_border[:,0]] = inner_border_label
-
-        image[outer_border[:,1], outer_border[:,0]] = outer_border_label
-
-        # Does not work but would probably be much faster :(
-        # assignment_dict = zip(self._shape_ids, assignments)
-        # image = [assignment_dict[i] for i in image]
-
-        for shape in shape_ids:
-            index = np.where(shape_ids == shape)
-            image[image == shape] = classes[index]
-
-        lut = gen_lut()
-
-        color_image = image.astype(np.uint8)
-        color_image = cv2.LUT(cv2.merge((color_image, color_image, color_image)), lut)
-
-        shapes_dict = dict(zip(shape_ids, shapes))
-
-        return shapes_dict, assignments, color_image
+    return shapes_dict, assignments, color_image
