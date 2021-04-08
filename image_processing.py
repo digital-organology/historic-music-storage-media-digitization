@@ -10,6 +10,7 @@ import musicbox.image.center
 import musicbox.image.notes
 import musicbox.notes.convert
 import musicbox.notes.midi
+from musicbox.helpers import change_contrast_brightness
 
 def main():
     # Parse arguments
@@ -50,6 +51,7 @@ def main():
     # Read image in
     # picture = cv2.imread("data/test_rotated.tiff", cv2.IMREAD_GRAYSCALE)
     picture = cv2.imread(args.input)
+    picture = change_contrast_brightness(picture)
 
     print("{:>10}".format("OK"))
 
