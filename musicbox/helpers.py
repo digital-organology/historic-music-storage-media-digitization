@@ -26,15 +26,22 @@ def plot_polygon(pic, polygon):
     plt.imshow(bg_image)
     plt.show()
 
-def change_contrast_brightness(picture, contrast_factor=0.86, brightness_val=100):
-    brighter_picture = np.where((255 - picture) < brightness_val, 255, picture + brightness_val)
+
+def change_contrast_brightness(picture, contrast_factor=1, brightness_val=0):
+    # convert to gray
+    gray = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
+    # threshold at high intensity
+    _, thresh = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+    brighter_picture = np.where((255 - thresh) < brightness_val, 255, thresh + brightness_val)
     contrast_picture = brighter_picture * contrast_factor
     return contrast_picture.astype(np.uint8)
+
 
 def picture_to_blackwhite(picture):
     grayScale = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
     (_, bwImage) = cv2.threshold(grayScale, 127, 255, cv2.THRESH_BINARY)
     return bwImage
+
 
 def show_difference(picture_file1, picture_file2, outf, color_dif=True):
     picture1 = cv2.imread(picture_file1)
