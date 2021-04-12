@@ -16,7 +16,7 @@ default:
   # Total number of tracks on the disc
   n_tracks: 36
   # Low threshold for canny algorithm
-  canny_low: 50
+  canny_low: 100
   # High threshold
   canny_high: 255
   # Mappings of tracks to midi codes

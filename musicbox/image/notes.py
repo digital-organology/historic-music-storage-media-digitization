@@ -39,6 +39,24 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False, exact_mode = False):
+        """Extract note positions from labeled image.
+
+        Keyword arguments:
+        img -- 2d Array of integers representing image with annotated connected components
+        outer_radius -- Radius of the outer border of the music disc, unit does not matter but needs to be the same as inner_radius
+        inner_radius -- Radius of the inner border (the area containing labels and such but no notes) of the music box disc
+        center_x -- Calculated x coordinate of the center of the disc
+        center_y -- Calculated y coordinate of the center of the disc
+        bwidth -- Bandwidth used with the meanshift algorithm
+        first_track -- Relative position of the innnermost track from center to outer border
+        track_width -- Average width of each track as relative distance between center and outer border
+        img_grayscale -- Grayscale version of the image provided as first argument
+        compat_mode -- If set to true will run an extra round of connected component detection with a high search distance to find the outer border of the disc
+        exact_mode -- Will employ some mitigations to calculate the positions of the notes correctly even when the detected components are partial
+
+        :Returns:
+            color_lut : opencv compatible color lookup table
+        """
         # img_grayscale is only needed when compat_mode is set to True.
         # We will use it to run another pass detecting shapes with a high search area to find the outermost border
 
@@ -100,13 +118,13 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
 
         # We can use the center points to determine if the shape are inside the inner
         # border or outside
-        # We calculate the distance to the center, if it is smaller than the inner radius we drop the point
-        # otherwise we keep it
+        # We calculate the distance to the center, if it is smaller than the inner radius 
+        # (or larger than the outer one for that reason) we drop the point, otherwise we keep it
 
         keep = []
         for point in centers:
             center_dist = distance.cdist([point], [(center_x, center_y)])[0][0]
-            if center_dist < inner_radius_calc:
+            if center_dist < inner_radius_calc or center_dist > (outer_radius_calc * 1.3):
                 keep.append(False)
             else:
                 keep.append(True)
