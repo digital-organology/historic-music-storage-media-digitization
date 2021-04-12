@@ -53,12 +53,12 @@ def main():
     orig_picture = cv2.imread(args.input)
     picture = change_contrast_brightness(orig_picture, contrast_factor=1, brightness_val=100)#1.2
     cv2.imwrite("processed_picture_tmp.jpg", picture)
-    sys.exit(1)
+    # sys.exit(1)
     print("{:>10}".format("OK"))
 
     print("Applying canny algorithm and finding center... ", sep = "", end = "")
 
-    canny_image = musicbox.image.canny.canny_threshold(picture, config["canny_low"], config["canny_high"])
+    canny_image = musicbox.image.canny.canny_threshold(orig_picture, picture, config["canny_low"], config["canny_high"])
 
     center_x, center_y = musicbox.image.center.calculate_center(canny_image)
 
@@ -90,8 +90,8 @@ def main():
                                                                                 config["first_track"], 
                                                                                 config["track_width"],
                                                                                 img_grayscale,
-                                                                                compat_mode = True,
-                                                                                exact_mode = True)
+                                                                                compat_mode = False,
+                                                                                exact_mode = False)
 
     print("{:>10}".format("OK"))
 
