@@ -25,6 +25,7 @@ def main():
                         const = "config.yaml", default = "config.yaml", nargs = "?")
     parser.add_argument("-d", "--disc-type", help = "type of the plate to process",
                         const = "default", default = "default", nargs = "?")
+    parser.add_argument("--skip-canny", dest = "canny", action = "store_false")
     args = parser.parse_args()
     
     print("Reading config file from '", args.config, "'... ", sep = "", end = "")
@@ -55,9 +56,13 @@ def main():
 
     print("{:>10}".format("OK"))
 
-    print("Applying canny algorithm and finding center... ", sep = "", end = "")
-
-    canny_image = musicbox.image.canny.canny_threshold(orig_picture, picture, config["canny_low"], config["canny_high"])
+    if args.canny:
+        print("Applying canny algorithm and finding center... ", sep = "", end = "")
+        canny_image = musicbox.image.canny.canny_threshold(picture, config["canny_low"], config["canny_high"])
+    else:
+        print("Finding center... ", sep = "", end = "")
+        # This should be done somewhere else and is here just for testing
+        _, canny_image = cv2.threshold(picture, 130, 255, cv2.THRESH_BINARY)
 
     center_x, center_y = musicbox.image.center.calculate_center(canny_image)
 
@@ -88,9 +93,7 @@ def main():
                                                                                 config["bandwidth"],
                                                                                 config["first_track"], 
                                                                                 config["track_width"],
-                                                                                img_grayscale,
-                                                                                compat_mode = False,
-                                                                                exact_mode = False)
+                                                                                img_grayscale)
 
     print("{:>10}".format("OK"))
 
