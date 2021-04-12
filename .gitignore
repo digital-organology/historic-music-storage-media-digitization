@@ -1,5 +1,6 @@
 data/*
 output/*
+!data/test_images/
 *.tiff
 .vscode/
 __pycache__/
