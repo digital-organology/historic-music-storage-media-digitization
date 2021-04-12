@@ -32,7 +32,13 @@ def change_contrast_brightness(picture, contrast_factor=1, brightness_val=0):
     gray = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
     # threshold at high intensity
     _, thresh = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
-    brighter_picture = np.where((255 - thresh) < brightness_val, 255, thresh + brightness_val)
+
+    kernel = np.ones((3, 3), np.uint8)
+    erosion = cv2.erode(thresh, kernel, iterations=1)
+    bigger_kernel = np.ones((5, 5), np.uint8)
+    noise_removed = cv2.morphologyEx(erosion, cv2.MORPH_OPEN, bigger_kernel)
+
+    brighter_picture = np.where((255 - noise_removed) < brightness_val, 255, noise_removed + brightness_val)
     contrast_picture = brighter_picture * contrast_factor
     return contrast_picture.astype(np.uint8)
 

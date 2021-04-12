@@ -52,8 +52,7 @@ def main():
     # picture = cv2.imread("data/test_rotated.tiff", cv2.IMREAD_GRAYSCALE)
     orig_picture = cv2.imread(args.input)
     picture = change_contrast_brightness(orig_picture, contrast_factor=1, brightness_val=100)#1.2
-    cv2.imwrite("processed_picture_tmp.jpg", picture)
-    # sys.exit(1)
+
     print("{:>10}".format("OK"))
 
     print("Applying canny algorithm and finding center... ", sep = "", end = "")
