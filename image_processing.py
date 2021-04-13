@@ -58,7 +58,7 @@ def main():
 
     if args.canny:
         print("Applying canny algorithm and finding center... ", sep = "", end = "")
-        canny_image = musicbox.image.canny.canny_threshold(picture, config["canny_low"], config["canny_high"])
+        canny_image = musicbox.image.canny.canny_threshold(orig_picture, picture, config["canny_low"], config["canny_high"])
     else:
         print("Finding center... ", sep = "", end = "")
         # This should be done somewhere else and is here just for testing
