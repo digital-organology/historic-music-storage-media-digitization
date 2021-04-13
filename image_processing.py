@@ -10,7 +10,7 @@ import musicbox.image.center
 import musicbox.image.notes
 import musicbox.notes.convert
 import musicbox.notes.midi
-from musicbox.helpers import change_contrast_brightness
+from musicbox.image.processing import change_contrast_brightness
 
 def main():
     # Parse arguments
