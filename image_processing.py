@@ -60,7 +60,7 @@ def main():
     else:
         print("Finding center... ", sep = "", end = "")
         # This should be done somewhere else and is here just for testing
-        _, canny_image = cv2.threshold(picture, 130, 255, cv2.THRESH_BINARY)
+        _, canny_image = cv2.threshold(picture, 60, 255, cv2.THRESH_BINARY)
 
     center_x, center_y = musicbox.image.center.calculate_center(canny_image)
 
