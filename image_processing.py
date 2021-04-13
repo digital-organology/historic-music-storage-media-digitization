@@ -87,8 +87,8 @@ def main():
                                                                                 config["first_track"], 
                                                                                 config["track_width"],
                                                                                 img_grayscale,
-                                                                                compat_mode = False,
-                                                                                exact_mode = False)
+                                                                                compat_mode = True,
+                                                                                exact_mode = True)
 
     print("{:>10}".format("OK"))
 
