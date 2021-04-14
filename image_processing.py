@@ -24,6 +24,7 @@ def main():
                         const = "config.yaml", default = "config.yaml", nargs = "?")
     parser.add_argument("-d", "--disc-type", help = "type of the plate to process",
                         const = "default", default = "default", nargs = "?")
+    parser.add_argument("--debug", dest = "debug", action = "store_true")
     args = parser.parse_args()
     
     print("Reading config file from '", args.config, "'... ", sep = "", end = "")
@@ -78,7 +79,7 @@ def main():
     print("Segmenting disc into tracks... ", end = "")
 
     # shapes_dict, assignments, color_image = processor.extract_shapes(outer_radius, inner_radius, center_x, center_y, 10)
-    shapes_dict, assignments, color_image = musicbox.image.notes.extract_notes(labels,
+    shapes_dict, assignments, color_image, annotated_image = musicbox.image.notes.extract_notes(labels,
                                                                                 config["outer_radius"],
                                                                                 config["inner_radius"],
                                                                                 center_x,
@@ -87,8 +88,10 @@ def main():
                                                                                 config["first_track"], 
                                                                                 config["track_width"],
                                                                                 img_grayscale,
-                                                                                compat_mode = True,
-                                                                                exact_mode = True)
+                                                                                compat_mode = False,
+                                                                                exact_mode = False,
+                                                                                debug = args.debug)
+
 
     print("{:>10}".format("OK"))
 

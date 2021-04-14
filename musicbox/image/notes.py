@@ -38,7 +38,7 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 
-def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False, exact_mode = False):
+def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False, exact_mode = False, debug = False):
         # img_grayscale is only needed when compat_mode is set to True.
         # We will use it to run another pass detecting shapes with a high search area to find the outermost border
 
@@ -206,4 +206,27 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
 
         shapes_dict = dict(zip(shape_ids, shapes))
 
-        return shapes_dict, assignments, color_image
+        annotated_image = color_image.copy()
+
+        if debug:
+            for i in range(len(centers)):
+                id = shape_ids[i]
+                point = centers[i]
+                point = (point[0], point[1])
+                cv2.putText(annotated_image,
+                            str(id),
+                            point,
+                            cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                            0.7,
+                            (255, 255, 255),
+                            2)
+
+            cv2.imwrite("debug.tiff", annotated_image)
+
+
+            # import pdb; pdb.set_trace()
+
+            debug_array = np.column_stack((shape_ids, classes, assignments, inner_distances))
+            np.savetxt("debug.txt", debug_array, delimiter = ",", fmt= "%1.5f")
+
+        return shapes_dict, assignments, color_image, annotated_image
