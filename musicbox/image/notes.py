@@ -142,9 +142,8 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
     # As we might have some shapes that are incomplete (but are notes we want to match correctly)
     # we also employ a mechanism to calculate their position that does not rely on correctly identifies center points
 
-    outer_distances = [] # We do not actually use this right now -> why not?
+    outer_distances = [] # We do not actually use this right now
     inner_distances = []
-    joint_distances = []
 
     if exact_mode:
         for shape in shapes:
@@ -162,26 +161,26 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
             sum_distance = outer_distance + inner_distance
             outer_distances.append(outer_distance / sum_distance)
             inner_distances.append(inner_distance / sum_distance)
-            joint_distances.append([inner_distance / sum_distance,
-                                    outer_distance / sum_distance])
 
     # Now we may start clustering these points
-    distance_feature = joint_distances
+    distance_feature = inner_distances
     data = np.array(distance_feature)
     data = data * 1000
     data = np.column_stack((data, np.zeros(len(data))))
     data = data.astype(int)
-    '''
+    
     ms = MeanShift(bandwidth = bwidth, bin_seeding = True)#, cluster_all=False)
     ms.fit(data)
     classes = ms.labels_
-    '''
+    
     '''
     sc = SpectralClustering(n_clusters=36, assign_labels="discretize", random_state=122333).fit(data)
     classes = sc.labels_
     '''
-    ds = DBSCAN(eps=10, min_samples=2).fit(data)
+    '''
+    ds = DBSCAN(eps=12, min_samples=1).fit(data)
     classes = ds.labels_
+    '''
     #import pdb; pdb.set_trace()
     # We now go ahead and sort the clusters in ascending order beginning on the inside
 
@@ -191,9 +190,9 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
     for cluster in cluster_ids:
         tmp = inner_assignments[np.where(inner_assignments[:,0] == cluster)]
         means.append(np.mean(tmp[:,1]))
-        print("Looking at cluster id:", cluster)
-        pprint(stats.describe(tmp[:,1]))
-        print()
+        #print("Looking at cluster id:", cluster)
+        #pprint(stats.describe(tmp[:,1]))
+        #print()
 
     cluster_means = np.column_stack((cluster_ids, means))
     cluster_means = cluster_means[cluster_means[:,1].argsort()]

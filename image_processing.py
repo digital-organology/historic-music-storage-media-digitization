@@ -26,6 +26,9 @@ def main():
     parser.add_argument("-d", "--disc-type", help = "type of the plate to process",
                         const = "default", default = "default", nargs = "?")
     parser.add_argument("--skip-canny", dest = "canny", action = "store_false")
+    parser.add_argument("--img-prepro", dest = "prepro", action = "store_true",
+                        help = "Perform different image processing steps like erosion.")
+
     args = parser.parse_args()
     
     print("Reading config file from '", args.config, "'... ", sep = "", end = "")
@@ -52,17 +55,23 @@ def main():
     # Read image in
     # picture = cv2.imread("data/test_rotated.tiff", cv2.IMREAD_GRAYSCALE)
     orig_picture = cv2.imread(args.input)
-    picture = change_contrast_brightness(orig_picture, contrast_factor=1, brightness_val=100)#1.2
+
+    if args.prepro:
+        print("Performing automatic image preprocessing...")
+        processed_picture = change_contrast_brightness(orig_picture, contrast_factor=1, brightness_val=100)#1.2
+    else:
+        print("Converting image into grey scale - no preprocessing... ")
+        processed_picture = cv2.cvtColor(orig_picture, cv2.COLOR_BGR2GRAY)
 
     print("{:>10}".format("OK"))
 
     if args.canny:
         print("Applying canny algorithm and finding center... ", sep = "", end = "")
-        canny_image = musicbox.image.canny.canny_threshold(orig_picture, picture, config["canny_low"], config["canny_high"])
+        canny_image = musicbox.image.canny.canny_threshold(orig_picture, processed_picture, config["canny_low"], config["canny_high"])
     else:
         print("Finding center... ", sep = "", end = "")
         # This should be done somewhere else and is here just for testing
-        _, canny_image = cv2.threshold(picture, 130, 255, cv2.THRESH_BINARY)
+        _, canny_image = cv2.threshold(orig_picture, 60, 255, cv2.THRESH_BINARY)#original picture or processed picture??
 
     center_x, center_y = musicbox.image.center.calculate_center(canny_image)
 
