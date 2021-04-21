@@ -2,6 +2,7 @@ from musicbox.helpers import gen_lut
 import musicbox.image.label
 import numpy as np
 import math
+import os
 from scipy.spatial import distance
 from sklearn.cluster import MeanShift
 from itertools import compress
@@ -38,7 +39,7 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 
-def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False, exact_mode = False, debug = False):
+def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False, exact_mode = False, debug_dir = None):
         # img_grayscale is only needed when compat_mode is set to True.
         # We will use it to run another pass detecting shapes with a high search area to find the outermost border
 
@@ -208,7 +209,7 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
 
         annotated_image = color_image.copy()
 
-        if debug:
+        if debug_dir:
             for i in range(len(centers)):
                 id = shape_ids[i]
                 point = centers[i]
@@ -221,12 +222,12 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
                             (255, 255, 255),
                             2)
 
-            cv2.imwrite("debug.tiff", annotated_image)
+            cv2.imwrite(os.path.join(debug_dir, "numbers_debug.tiff"), annotated_image)
 
 
             # import pdb; pdb.set_trace()
 
             debug_array = np.column_stack((shape_ids, classes, assignments, inner_distances))
-            np.savetxt("debug.txt", debug_array, delimiter = ",", fmt= "%1.5f")
+            np.savetxt(os.path.join(debug_dir, "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
 
         return shapes_dict, assignments, color_image, annotated_image

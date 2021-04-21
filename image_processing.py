@@ -3,6 +3,7 @@ import cv2
 import argparse
 import yaml
 import sys
+import os
 import numpy as np
 import musicbox.image.label
 import musicbox.image.canny
@@ -16,16 +17,25 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help = "input image file, must be able to open with cv2.imread")
     parser.add_argument("output", help = "output file name")
-    parser.add_argument("-s", "--shapes-file", help = "file name to save detected shapes to, defaults to 'detected_shapes.tiff'",
-                        const = None, nargs = "?", default = None)
-    parser.add_argument("-t", "--tracks-file", help = "file name to save detected tracks to if desired",
-                        const = None, nargs = "?", default = None)
     parser.add_argument("-c", "--config", help = "config file containing required information about plate type",
                         const = "config.yaml", default = "config.yaml", nargs = "?")
     parser.add_argument("-d", "--disc-type", help = "type of the plate to process",
                         const = "default", default = "default", nargs = "?")
-    parser.add_argument("--debug", dest = "debug", action = "store_true")
+    parser.add_argument("-debug_dir", default = None, help = "If specified write shape / track colored files\
+                                                                     and number annotation to output directory ")
     args = parser.parse_args()
+
+    # Additional args definition if debug_dir was specified
+    if args.debug_dir:
+        if not os.path.exists(args.debug_dir):
+            print("Creating folder to store debug files...")
+            os.mkdir(args.debug_dir)
+        args.shapes_file = os.path.join(args.debug_dir, "shapes.jpg")
+        args.tracks_file = os.path.join(args.debug_dir, "tracks.jpg")
+    else:
+        args.shapes_file = None
+        args.tracks_file = None
+
     
     print("Reading config file from '", args.config, "'... ", sep = "", end = "")
     
@@ -71,7 +81,7 @@ def main():
 
     print("{:>10}".format("OK"))
 
-    if not args.shapes_file is None:
+    if args.shapes_file:
         print("Writing image of detected shapes to '", args.shapes_file, "'... ", sep = "", end = "")
         cv2.imwrite(args.shapes_file, labels_image)
         print("{:>10}".format("OK"))
@@ -90,12 +100,12 @@ def main():
                                                                                 img_grayscale,
                                                                                 compat_mode = False,
                                                                                 exact_mode = False,
-                                                                                debug = args.debug)
+                                                                                debug_dir = args.debug_dir)
 
 
     print("{:>10}".format("OK"))
 
-    if not args.tracks_file is None:
+    if args.tracks_file:
         print("Writing image of detected tracks to '", args.tracks_file, "'... ", sep = "", end = "")
         cv2.imwrite(args.tracks_file, color_image)
         print("{:>10}".format("OK"))
