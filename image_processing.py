@@ -20,12 +20,12 @@ def main():
     parser.add_argument("output", help = "output file name")
     parser.add_argument("-c", "--config", help = "config file containing required information about plate type",
                         const = "config.yaml", default = "config.yaml", nargs = "?")
-    parser.add_argument("-d", "--disc-type", help = "type of the plate to process",
+    parser.add_argument("-t", "--type", help = "type of the plate to process",
                         const = "default", default = "default", nargs = "?")
-    parser.add_argument("-debug_dir", default = None, help = "If specified write shape / track colored files\
+    parser.add_argument("-d", "--debug-dir", default = None, help = "If specified write shape / track colored files\
                                                                      and number annotation to output directory ")
-    parser.add_argument("--skip-canny", dest = "canny", action = "store_false")
-    parser.add_argument("--img-prepro", dest = "prepro", action = "store_true",
+    parser.add_argument("-s", "--skip-canny", dest = "canny", action = "store_false")
+    parser.add_argument("-i", "--img-preprocessing", dest = "prepro", action = "store_true",
                         help = "Perform different image processing steps like erosion.")
     args = parser.parse_args()
 
@@ -53,10 +53,10 @@ def main():
 
     print("{:>10}".format("OK"))
 
-    print("Using configuration preset '", args.disc_type, "'... ", sep = "", end = "")
+    print("Using configuration preset '", args.type, "'... ", sep = "", end = "")
 
     # config = config["default"]
-    config = config[args.disc_type]
+    config = config[args.type]
 
     print("{:>10}".format("OK"))
 
@@ -67,11 +67,15 @@ def main():
     orig_picture = cv2.imread(args.input)
 
     if args.prepro:
-        print("\nPerforming automatic image preprocessing...")
-        processed_picture = change_contrast_brightness(orig_picture, contrast_factor=1, brightness_val=100)#1.2
+        print("\nPerforming automatic image preprocessing...", sep = "", end = "")
+        processed_picture = change_contrast_brightness(orig_picture,
+                                                        config["erosion_kernel"],
+                                                        config["noise_kernel"],
+                                                        contrast_factor = 1,
+                                                        brightness_val = config["brightness"])#1.2
     else:
-        print("\nConverting image into grey scale - no preprocessing... ")
-        processed_picture = cv2.cvtColor(orig_picture, cv2.COLOR_BGR2GRAY)
+        print("\nConverting image into grey scale - no preprocessing... ", sep = "", end = "")
+        # processed_picture = cv2.cvtColor(orig_picture, cv2.COLOR_BGR2GRAY)
 
     print("{:>10}".format("OK"))
 
@@ -104,6 +108,8 @@ def main():
     print("Segmenting disc into tracks... ", end = "")
 
     # shapes_dict, assignments, color_image = processor.extract_shapes(outer_radius, inner_radius, center_x, center_y, 10)
+
+
     shapes_dict, assignments, color_image = musicbox.image.notes.extract_notes(labels,
                                                                                 config["outer_radius"],
                                                                                 config["inner_radius"],
@@ -114,8 +120,10 @@ def main():
                                                                                 config["track_width"],
                                                                                 img_grayscale,
                                                                                 compat_mode = False,
-                                                                                exact_mode = False,
-                                                                                debug_dir = args.debug_dir)
+                                                                                absolute_mode = False,
+                                                                                debug_dir = args.debug_dir,
+                                                                                use_punchhole = config["punchholes"],
+                                                                                punchhole_side = "left")
 
 
     print("{:>10}".format("OK"))

@@ -5,5 +5,3 @@ output/*
 .vscode/
 __pycache__/
 *.mid
-*notes*
-*obsolete*

@@ -1,4 +1,5 @@
 default:
+  punchholes: False
   # Radius of the inner label, unit does not matter but has to match the one used for outer radius
   inner_radius: 3.5
   # Radius of the entire disc
@@ -175,6 +176,9 @@ metal:
     93: 85
     94: 85
 metal_new:
+  # Use: 'convert DSC04476_metall.jpg -brightness-contrast -60x50 -morphology EdgeIn Octagon metall_6_2.tiff'
+
+  punchholes: True
   # Radius of the inner label, unit does not matter but has to match the one used for outer radius
   inner_radius: 5
   # Radius of the entire disc
@@ -188,13 +192,17 @@ metal_new:
   # Average width of each track as relative distance between center and outer border = 22cm, spurbreite 
   track_width: 0.01190476
   # Relative position of the innnermost track from center to outer border = dist_innermostpolygon / outer_border 
-  first_track: 0.227
+  first_track: 0.20
   # Total number of tracks on the disc
   n_tracks: 108
   # Low threshold for canny algorithm
   canny_low: 50
   # High threshold
   canny_high: 255
+  # Preprocessing parameters
+  erosion_kernel: 3
+  noise_kernel: 5
+  brightness: 20
   # Mappings of tracks to midi codes
   track_mappings:
     1: 43
