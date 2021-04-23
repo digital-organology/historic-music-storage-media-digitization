@@ -22,12 +22,11 @@ def main():
                         const = "config.yaml", default = "config.yaml", nargs = "?")
     parser.add_argument("-d", "--disc-type", help = "type of the plate to process",
                         const = "default", default = "default", nargs = "?")
+    parser.add_argument("-debug_dir", default = None, help = "If specified write shape / track colored files\
+                                                                     and number annotation to output directory ")
     parser.add_argument("--skip-canny", dest = "canny", action = "store_false")
     parser.add_argument("--img-prepro", dest = "prepro", action = "store_true",
                         help = "Perform different image processing steps like erosion.")
-
-    parser.add_argument("-debug_dir", default = None, help = "If specified write shape / track colored files\
-                                                                     and number annotation to output directory ")
     args = parser.parse_args()
 
     # Additional args definition if debug_dir was specified
@@ -68,10 +67,10 @@ def main():
     orig_picture = cv2.imread(args.input)
 
     if args.prepro:
-        print("Performing automatic image preprocessing...")
+        print("\nPerforming automatic image preprocessing...")
         processed_picture = change_contrast_brightness(orig_picture, contrast_factor=1, brightness_val=100)#1.2
     else:
-        print("Converting image into grey scale - no preprocessing... ")
+        print("\nConverting image into grey scale - no preprocessing... ")
         processed_picture = cv2.cvtColor(orig_picture, cv2.COLOR_BGR2GRAY)
 
     print("{:>10}".format("OK"))
