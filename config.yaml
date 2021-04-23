@@ -57,3 +57,237 @@ default:
     34: 82
     35: 83
     36: 84
+metal:
+  # Radius of the inner label, unit does not matter but has to match the one used for outer radius
+  inner_radius: 1.8
+  # Radius of the entire disc, outer border ~8.4
+  outer_radius: 8.8
+  # Number of beats the disc has
+  number_beats: 144
+  # Bandwidth used for meanshift clustering the tracks
+  bandwidth: 4
+  # How far to look around each pixel when finding connected components in the image
+  search_distance: 1
+  # Average width of each track as relative distance between center and outer border
+  track_width: 0.01190476
+  # Relative position of the innnermost track from center to outer border = dist_innermostpolygon / outer_border? 
+  first_track: 0.214
+  # Total number of tracks on the disc
+  n_tracks: 94
+  # Low threshold for canny algorithm
+  canny_low: 50
+  # High threshold
+  canny_high: 255
+  # Mappings of tracks to midi codes
+  track_mappings:
+    1: 43
+    2: 45
+    3: 47
+    4: 48
+    5: 50
+    6: 52
+    7: 53
+    8: 54
+    9: 55
+    10: 57
+    11: 59
+    12: 60
+    13: 61
+    14: 62
+    15: 63
+    16: 64
+    17: 65
+    18: 66
+    19: 67
+    20: 68
+    21: 69
+    22: 70
+    23: 71
+    24: 72
+    25: 73
+    26: 74
+    27: 75
+    28: 76
+    29: 77
+    30: 78
+    31: 79
+    32: 80
+    33: 81
+    34: 82
+    35: 83
+    36: 84
+    37: 85
+    38: 85
+    39: 85
+    40: 85
+    41: 85
+    42: 85
+    43: 85
+    44: 85
+    45: 85
+    46: 85
+    47: 85
+    48: 85
+    49: 85
+    50: 85
+    51: 85
+    52: 85
+    53: 85
+    54: 85
+    55: 85
+    56: 85
+    57: 85
+    58: 85
+    59: 85
+    60: 85
+    61: 85
+    62: 85
+    63: 85
+    64: 85
+    65: 85
+    66: 85
+    67: 85
+    68: 85
+    69: 85
+    70: 85
+    71: 85
+    72: 85
+    73: 85
+    74: 85
+    75: 85
+    76: 85
+    77: 85
+    78: 85
+    79: 85
+    80: 85
+    81: 85
+    82: 85
+    83: 85
+    84: 85
+    85: 85
+    86: 85
+    87: 85
+    88: 85
+    89: 85
+    90: 85
+    91: 85
+    92: 85
+    93: 85
+    94: 85
+metal_new:
+  # Radius of the inner label, unit does not matter but has to match the one used for outer radius
+  inner_radius: 5
+  # Radius of the entire disc
+  outer_radius: 24.35
+  # Number of beats the disc has
+  number_beats: 144
+  # Bandwidth used for meanshift clustering the tracks
+  bandwidth: 4
+  # How far to look around each pixel when finding connected components in the image
+  search_distance: 1
+  # Average width of each track as relative distance between center and outer border = 22cm, spurbreite 
+  track_width: 0.01190476
+  # Relative position of the innnermost track from center to outer border = dist_innermostpolygon / outer_border 
+  first_track: 0.227
+  # Total number of tracks on the disc
+  n_tracks: 108
+  # Low threshold for canny algorithm
+  canny_low: 50
+  # High threshold
+  canny_high: 255
+  # Mappings of tracks to midi codes
+  track_mappings:
+    1: 43
+    2: 45
+    3: 47
+    4: 48
+    5: 50
+    6: 52
+    7: 53
+    8: 54
+    9: 55
+    10: 57
+    11: 59
+    12: 60
+    13: 61
+    14: 62
+    15: 63
+    16: 64
+    17: 65
+    18: 66
+    19: 67
+    20: 68
+    21: 69
+    22: 70
+    23: 71
+    24: 72
+    25: 73
+    26: 74
+    27: 75
+    28: 76
+    29: 77
+    30: 78
+    31: 79
+    32: 80
+    33: 81
+    34: 82
+    35: 83
+    36: 84
+    37: 85
+    38: 85
+    39: 85
+    40: 85
+    41: 85
+    42: 85
+    43: 85
+    44: 85
+    45: 85
+    46: 85
+    47: 85
+    48: 85
+    49: 85
+    50: 85
+    51: 85
+    52: 85
+    53: 85
+    54: 85
+    55: 85
+    56: 85
+    57: 85
+    58: 85
+    59: 85
+    60: 85
+    61: 85
+    62: 85
+    63: 85
+    64: 85
+    65: 85
+    66: 85
+    67: 85
+    68: 85
+    69: 85
+    70: 85
+    71: 85
+    72: 85
+    73: 85
+    74: 85
+    75: 85
+    76: 85
+    77: 85
+    78: 85
+    79: 85
+    80: 85
+    81: 85
+    82: 85
+    83: 85
+    84: 85
+    85: 85
+    86: 85
+    87: 85
+    88: 85
+    89: 85
+    90: 85
+    91: 85
+    92: 85
+    93: 85
+    94: 85
