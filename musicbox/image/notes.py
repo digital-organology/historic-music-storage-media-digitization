@@ -1,4 +1,6 @@
 from musicbox.helpers import gen_lut
+from musicbox.helpers import calculate_angles
+from musicbox.image.center import alternative_center
 import musicbox.image.label
 import numpy as np
 import math
@@ -39,7 +41,20 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 
-def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, first_track, track_width, img_grayscale, compat_mode = False, exact_mode = False, debug_dir = None):
+def extract_notes(img,
+         	        outer_radius,
+                    inner_radius,
+                    center_x,
+                    center_y,
+                    bwidth,
+                    first_track,
+                    track_width,
+                    img_grayscale,
+                    compat_mode = False,
+                    absolute_mode = False,
+                    debug_dir = None,
+                    use_punchhole = False,
+                    punchhole_side = "left"):          
     """Extract note positions from labeled image.
     Keyword arguments:
     img -- 2d Array of integers representing image with annotated connected components
@@ -67,8 +82,13 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
     else:
         labels = img.copy()
 
-    indices = np.unique(labels)
-    outer_border_id = indices[indices != 0].min()
+    # indices = np.unique(labels)
+    # outer_border_id = indices[indices != 0].min()
+    indices, counts = np.unique(labels, return_counts = True)
+    indices = indices[1:]
+    counts = counts[1:]
+    max_count = np.argmax(counts)
+    outer_border_id = indices[max_count]
     
     # Transform it into a polygon
 
@@ -76,6 +96,14 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
 
     # Switch x and y around
     outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
+
+    if not use_punchhole:#for non-metal plates: updated center definition
+        center_x, center_y = alternative_center(outer_border)
+
+    # print("outer border center calc:", tuplex)
+    # color_image = cv2.circle(img, (tuplex[0], tuplex[1]), 3, (255, 0, 0), 3)
+    # cv2.imshow("ci", color_image)
+
 
     # To find the inner border we calculate the distance from the center
     # to the outer border. We can then calculate a approximate circular inner border.
@@ -109,11 +137,21 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
     centers = []
     for shape_id in shape_ids:
         contour = np.argwhere(img == shape_id).astype(np.uint32)
-        point = np.mean(contour, 0).astype(np.uint32)
-        point = np.array([point[1], point[0]])
         contour[:, [0, 1]] = contour[:, [1, 0]]
+        if use_punchhole:
+            mini, maxi = calculate_angles(contour, center_x, center_y, return_points = True)
+            if punchhole_side == "left":
+                #mini = np.array([mini[1], mini[0]])
+                centers.append(mini.astype(np.uint32))
+            elif punchhole_side == "right":
+                #maxi = np.array([maxi[1], maxi[0]])
+                centers.append(maxi.astype(np.uint32))
+            else:
+                raise Exception("You donut that is not a side")
+        else:
+            point = np.mean(contour, 0).astype(np.uint32)
+            centers.append(point)
         shapes.append(contour)
-        centers.append(point)
 
     # We can use the center points to determine if the shape are inside the inner
     # border or outside
@@ -139,16 +177,15 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
     outer_distances = [] # We do not actually use this right now
     inner_distances = []
 
-    if exact_mode:
-        for shape in shapes:
-            inner_distance = distance.cdist(shape, [(center_x, center_y)]).min()
-            outer_distance = distance.cdist(shape, outer_border).min()
-            sum_distance = outer_distance + inner_distance
-            outer_distances.append(outer_distance / sum_distance)
-            inner_distances.append(inner_distance / sum_distance)
-    else:
-        for point in centers:
-            pnt = [(point[0], point[1])]
+    for point in centers:
+        pnt = [(point[0], point[1])]
+        #pnt = [(point[1], point[0])]
+        if absolute_mode:
+            inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
+            outer_distance = distance.cdist(pnt, outer_border).min()
+            outer_distances.append(outer_distance)
+            inner_distances.append(inner_distance)
+        else:
             # inner_distance = distance.cdist(pnt, inner_border).min()
             inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
             outer_distance = distance.cdist(pnt, outer_border).min()
@@ -212,26 +249,30 @@ def extract_notes(img, outer_radius, inner_radius, center_x, center_y, bwidth, f
     # assignment_dict = zip(self._shape_ids, assignments)
     # image = [assignment_dict[i] for i in image]
 
-    for shape in shape_ids:
-        index = np.where(shape_ids == shape)
-        image[image == shape] = classes[index]
+    assignment_dict = dict(zip(assignments[:,0], assignments[:,1]))
+    image = np.vectorize(assignment_dict.get)(image)
+    image[image == None] = 0
 
     lut = gen_lut()
 
     color_image = image.astype(np.uint8)
     color_image = cv2.LUT(cv2.merge((color_image, color_image, color_image)), lut)
+    color_image = cv2.circle(color_image, (center_x, center_y), 3, (255, 0, 0), 3)
 
+    for center in centers:
+        color_image[center[1], center[0]] = (255, 255, 255)
+    
     shapes_dict = dict(zip(shape_ids, shapes))
 
     annotated_image = color_image.copy()
 
     if debug_dir:
         for i in range(len(centers)):
-            id = shape_ids[i]
+            assigned_id = assignments[i, 1]#0 -> shape_id, 1 -> track_id
             point = centers[i]
             point = (point[0], point[1])
             cv2.putText(annotated_image,
-                        str(id),
+                        str(assigned_id),
                         point,
                         cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
                         0.7,
