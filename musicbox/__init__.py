@@ -1,1 +1,1 @@
-__all__ = ["helpers"]
+__all__ = ["helpers", "trackbar_parameters"] 

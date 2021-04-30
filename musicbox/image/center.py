@@ -1,4 +1,7 @@
 import math
+import cv2
+from shapely.geometry import Polygon
+import numpy as np
 
 def _getRadiusOutwards(src, axis, centre, length):
     min = -1
@@ -42,6 +45,7 @@ def _getPointsOnEuclidSpiral(xMid, yMid, amount):
 def calculate_center(src):
     imageHeight, imageWidth, imageChannels = src.shape
     centreGuessed = [round(imageWidth/2), round(imageHeight/2)]
+    print("old", centreGuessed)
     lengths = (imageWidth, imageHeight)
     MINIMAL_RADIUS_OF_CIRCLE = 20
     spiralPoints = _getPointsOnEuclidSpiral(centreGuessed[0], centreGuessed[1], 400)
@@ -66,3 +70,13 @@ def calculate_center(src):
         if abs(r0-r1)+abs(r2-r3) < 5:
             return [middleX, middleY]
     return centreGuessed
+
+def alternative_center(outer_border_contour):
+    # M = cv2.moments(outer_border_contour)
+    # cX = int(M["m10"] / M["m00"])
+    # cY = int(M["m01"] / M["m00"])
+    #P = Polygon(outer_border_contour)
+    #return P.centroid
+    cX = np.mean(outer_border_contour[:,0])
+    cY = np.mean(outer_border_contour[:,1])
+    return (int(cX), int(cY))
