@@ -58,7 +58,6 @@ def calculate_angles(shape, center_x, center_y, return_points = False):
 
     first_m = np.array([np.mean(first_line[:,0]), np.mean(first_line[:,1])])
     second_m = np.array([np.mean(second_line[:,0]), np.mean(second_line[:,1])])
-        
     # Calculate angle for first point
 
     third_point = np.array([center_x, first_m[1]])
@@ -85,7 +84,6 @@ def calculate_angles(shape, center_x, center_y, return_points = False):
     # Also as we are actually calculating the reverse angles if we are
     # in the upper left or lower right quadrant of the image
     # we need to take the calculated angle and subtract it from the full 90 degrees
-    
     # Also we sanitize for a few special cases here where points are exactly on
     # the centers x or y coordinate
 
@@ -122,7 +120,6 @@ def calculate_angles(shape, center_x, center_y, return_points = False):
         degs_second = 270
     elif second_m[0] > center_x and second_m[1] == center_y:
         degs_second = 90
-    
     # Sanitize a few special cases
 
     # For the first point

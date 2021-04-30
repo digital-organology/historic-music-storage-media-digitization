@@ -1,3 +1,6 @@
+*.DS_Store*
+*.midi
+test_scripts/*
 data/*
 output/*
 !data/test_images/

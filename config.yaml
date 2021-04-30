@@ -20,6 +20,11 @@ default:
   canny_low: 100
   # High threshold
   canny_high: 255
+  # Preprocessing parameters
+  thresh_binary: 245
+  erosion_kernel: 3
+  noise_kernel: 5
+  brightness: 100
   # Mappings of tracks to midi codes
   track_mappings:
     1: 43
@@ -79,6 +84,11 @@ metal:
   canny_low: 50
   # High threshold
   canny_high: 255
+  # Preprocessing parameters
+  thresh_binary: 200
+  erosion_kernel: 3
+  noise_kernel: 5
+  brightness: 20
   # Mappings of tracks to midi codes
   track_mappings:
     1: 43
@@ -177,7 +187,6 @@ metal:
     94: 85
 metal_new:
   # Use: 'convert DSC04476_metall.jpg -brightness-contrast -60x50 -morphology EdgeIn Octagon metall_6_2.tiff'
-
   punchholes: True
   # Radius of the inner label, unit does not matter but has to match the one used for outer radius
   inner_radius: 5
@@ -200,8 +209,9 @@ metal_new:
   # High threshold
   canny_high: 255
   # Preprocessing parameters
-  erosion_kernel: 3
-  noise_kernel: 5
+  thresh_binary: 200
+  erosion_kernel: 2
+  noise_kernel: 4
   brightness: 20
   # Mappings of tracks to midi codes
   track_mappings:

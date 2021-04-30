@@ -67,15 +67,15 @@ def main():
     orig_picture = cv2.imread(args.input)
 
     if args.prepro:
-        print("\nPerforming automatic image preprocessing...", sep = "", end = "")
-        processed_picture = change_contrast_brightness(orig_picture,
-                                                        config["erosion_kernel"],
-                                                        config["noise_kernel"],
-                                                        contrast_factor = 1,
-                                                        brightness_val = config["brightness"])#1.2
+        print("\nPerforming automatic image preprocessing...")
+        processed_picture = change_contrast_brightness(picture = orig_picture,
+                                                        erosion_kernel = config["erosion_kernel"],
+                                                        noise_kernel = config["noise_kernel"],
+                                                        thresh_binary = config["thresh_binary"],
+                                                        brightness_val = config["brightness"])
     else:
         print("\nConverting image into grey scale - no preprocessing... ", sep = "", end = "")
-        # processed_picture = cv2.cvtColor(orig_picture, cv2.COLOR_BGR2GRAY)
+        processed_picture = cv2.cvtColor(orig_picture, cv2.COLOR_BGR2GRAY)
 
     print("{:>10}".format("OK"))
 
@@ -88,6 +88,11 @@ def main():
         _, canny_image = cv2.threshold(orig_picture, 60, 255, cv2.THRESH_BINARY)#original picture or processed picture??
 
     center_x, center_y = musicbox.image.center.calculate_center(canny_image)
+    print("Center calculated:", (center_x, center_y))
+    # color_image = cv2.circle(canny_image, (center_x, center_y), 3, (255, 0, 0), 3)
+    # cv2.imshow("ci", color_image)
+    # cv2.waitKey(0)
+    # sys.exit(1)
 
     img_grayscale = cv2.cvtColor(canny_image, cv2.COLOR_BGR2GRAY)
 
@@ -106,9 +111,6 @@ def main():
         print("{:>10}".format("OK"))
 
     print("Segmenting disc into tracks... ", end = "")
-
-    # shapes_dict, assignments, color_image = processor.extract_shapes(outer_radius, inner_radius, center_x, center_y, 10)
-
 
     shapes_dict, assignments, color_image = musicbox.image.notes.extract_notes(labels,
                                                                                 config["outer_radius"],
