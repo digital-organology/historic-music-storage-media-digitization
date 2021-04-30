@@ -284,7 +284,7 @@ def extract_notes(img,
 
         # import pdb; pdb.set_trace()
 
-        debug_array = np.column_stack((shape_ids, classes, assignments, inner_distances))
+        debug_array = np.column_stack((shape_ids, classes, assignments[:,1], inner_distances))
         np.savetxt(os.path.join(debug_dir, "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
 
     return shapes_dict, assignments, color_image
