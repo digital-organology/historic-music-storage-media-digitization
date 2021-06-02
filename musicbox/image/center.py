@@ -2,6 +2,7 @@ import math
 import cv2
 from shapely.geometry import Polygon
 import numpy as np
+import sys
 
 def _getRadiusOutwards(src, axis, centre, length):
     min = -1
@@ -80,3 +81,21 @@ def alternative_center(outer_border_contour):
     cX = np.mean(outer_border_contour[:,0])
     cY = np.mean(outer_border_contour[:,1])
     return (int(cX), int(cY))
+
+def center_of_mass_filled_in(image, outer_border_contour):
+
+    cv2.drawContours(image, [outer_border_contour], -1, (255,255,255), -1)
+
+    greyscl = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _,thresh = cv2.threshold(greyscl, 127,255,0)
+    moments = cv2.moments(thresh)
+    cX = int(moments["m10"] / moments["m00"])
+    cY = int(moments["m01"] / moments["m00"])
+
+    print("Center of mass calculated:", (cX, cY))
+
+    # cv2.circle(image, (cX, cY), 5, (0, 0, 0), -1)
+    # cv2.imshow('image', image)
+    # cv2.waitKey(0)
+    # sys.exit(1)
+    return (cX, cY)

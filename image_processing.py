@@ -112,7 +112,8 @@ def main():
 
     print("Segmenting disc into tracks... ", end = "")
 
-    shapes_dict, assignments, color_image = musicbox.image.notes.extract_notes(labels,
+    shapes_dict, assignments, color_image = musicbox.image.notes.extract_notes(orig_picture,
+                                                                                labels,
                                                                                 config["outer_radius"],
                                                                                 config["inner_radius"],
                                                                                 center_x,

@@ -41,7 +41,8 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 
-def extract_notes(img,
+def extract_notes(orig_img,
+                    img,
          	        outer_radius,
                     inner_radius,
                     center_x,
@@ -98,7 +99,8 @@ def extract_notes(img,
     outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
 
     if not use_punchhole:#for non-metal plates: updated center definition
-        center_x, center_y = alternative_center(outer_border)
+        #center_x, center_y = alternative_center(outer_border)
+        center_x, center_y = musicbox.image.center.center_of_mass_filled_in(orig_img, outer_border)
 
     # print("outer border center calc:", tuplex)
     # color_image = cv2.circle(img, (tuplex[0], tuplex[1]), 3, (255, 0, 0), 3)
