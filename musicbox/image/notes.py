@@ -97,8 +97,8 @@ def extract_notes(img,
     # Switch x and y around
     outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
 
-    if not use_punchhole:#for non-metal plates: updated center definition
-        center_x, center_y = alternative_center(outer_border)
+    # if not use_punchhole:#for non-metal plates: updated center definition
+    #     center_x, center_y = alternative_center(outer_border)
 
     # print("outer border center calc:", tuplex)
     # color_image = cv2.circle(img, (tuplex[0], tuplex[1]), 3, (255, 0, 0), 3)
@@ -270,7 +270,7 @@ def extract_notes(img,
         for i in range(len(centers)):
             assigned_id = assignments[i, 1]#0 -> shape_id, 1 -> track_id
             point = centers[i]
-            point = (point[1], point[0])
+            point = (point[0], point[1])
             cv2.putText(annotated_image,
                         str(assigned_id),
                         point,
