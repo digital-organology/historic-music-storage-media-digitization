@@ -126,7 +126,7 @@ def extract_notes(img,
     
     median = np.median(counts)
     lower_bound = median / 3
-    upper_bound = 3 * median
+    upper_bound = 8 * median
 
     shape_candidates = np.where(np.logical_and(counts >= lower_bound, counts <= upper_bound))
     shape_ids = unique[shape_candidates]
