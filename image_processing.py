@@ -87,12 +87,6 @@ def main():
         # This should be done somewhere else and is here just for testing
         _, canny_image = cv2.threshold(orig_picture, 60, 255, cv2.THRESH_BINARY)#original picture or processed picture??
 
-    center_x, center_y = musicbox.image.center.calculate_center(canny_image)
-    print("Center calculated:", (center_x, center_y))
-    # color_image = cv2.circle(canny_image, (center_x, center_y), 3, (255, 0, 0), 3)
-    # cv2.imshow("ci", color_image)
-    # cv2.waitKey(0)
-    # sys.exit(1)
 
     img_grayscale = cv2.cvtColor(canny_image, cv2.COLOR_BGR2GRAY)
 
@@ -112,21 +106,20 @@ def main():
 
     print("Segmenting disc into tracks... ", end = "")
 
-    shapes_dict, assignments, color_image = musicbox.image.notes.extract_notes(orig_picture,
-                                                                                labels,
-                                                                                config["outer_radius"],
-                                                                                config["inner_radius"],
-                                                                                center_x,
-                                                                                center_y,
-                                                                                config["bandwidth"],
-                                                                                config["first_track"], 
-                                                                                config["track_width"],
-                                                                                img_grayscale,
-                                                                                compat_mode = False,
-                                                                                absolute_mode = False,
-                                                                                debug_dir = args.debug_dir,
-                                                                                use_punchhole = config["punchholes"],
-                                                                                punchhole_side = "left")
+    shapes_dict, assignments, color_image, (center_x, center_y) = musicbox.image.notes.extract_notes(orig_picture,
+                                                                                        labels,
+                                                                                        config["outer_radius"],
+                                                                                        config["inner_radius"],
+                                                                                        config["center_calculation"],
+                                                                                        config["bandwidth"],
+                                                                                        config["first_track"], 
+                                                                                        config["track_width"],
+                                                                                        img_grayscale,
+                                                                                        compat_mode = False,
+                                                                                        absolute_mode = False,
+                                                                                        debug_dir = args.debug_dir,
+                                                                                        use_punchhole = config["punchholes"],
+                                                                                        punchhole_side = "left")
 
 
     print("{:>10}".format("OK"))

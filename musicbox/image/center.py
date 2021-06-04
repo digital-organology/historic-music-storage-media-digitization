@@ -73,17 +73,12 @@ def calculate_center(src):
     return centreGuessed
 
 def alternative_center(outer_border_contour):
-    # M = cv2.moments(outer_border_contour)
-    # cX = int(M["m10"] / M["m00"])
-    # cY = int(M["m01"] / M["m00"])
-    #P = Polygon(outer_border_contour)
-    #return P.centroid
     cX = np.mean(outer_border_contour[:,0])
     cY = np.mean(outer_border_contour[:,1])
     return (int(cX), int(cY))
 
 def center_of_mass_filled_in(image, outer_border_contour):
-
+    orig_image = image.copy()
     cv2.drawContours(image, [outer_border_contour], -1, (255,255,255), -1)
 
     greyscl = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -92,10 +87,41 @@ def center_of_mass_filled_in(image, outer_border_contour):
     cX = int(moments["m10"] / moments["m00"])
     cY = int(moments["m01"] / moments["m00"])
 
-    print("Center of mass calculated:", (cX, cY))
-
-    # cv2.circle(image, (cX, cY), 5, (0, 0, 0), -1)
-    # cv2.imshow('image', image)
-    # cv2.waitKey(0)
-    # sys.exit(1)
+    print("\nCenter of mass calculated:", (cX, cY))
     return (cX, cY)
+
+def _translateRotation(rotation, width, height):
+    #stolen: https://www.programcreek.com/python/?code=team3997%2FChickenVision%2FChickenVision-master%2FChickenVision.py
+    if (width < height):
+        rotation = -1 * (rotation - 90)
+    if (rotation > 90):
+        rotation = -1 * (rotation - 180)
+    rotation *= -1
+    return round(rotation)
+
+def draw_ellipses(image, outer_border_contour):
+
+    ellipse = cv2.fitEllipse(outer_border_contour)
+    centerE = ellipse[0]#center of ellipse
+    #rotation = ellipse[2]
+    widthE = ellipse[1][0]
+    heightE = ellipse[1][1]
+    # Maps rotation to (-90 to 90). Makes it easier to tell direction of slant
+    #rotation = translateRotation(rotation, widthE, heightE)
+
+
+    cv2.ellipse(image, ellipse, (23, 184, 80), 3)
+    ellipse_masks = list()
+
+    w = int(widthE) - 1600
+    h = int(heightE) - 1600
+    for _ in range(0, 70):
+        w = w - 12
+        h = h - 12
+        ellipse_mask = cv2.ellipse(image, (int(centerE[0]), int(centerE[1])), (w, h), 0.0, 0, 360, (0,0,255), 1)
+        ellipse_masks.append(ellipse_masks)
+
+    cv2.imwrite("ellipses.png", image)
+    
+    raise NotImplementedError("Ellipse masks to polygon...")
+    return 

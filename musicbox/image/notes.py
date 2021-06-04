@@ -6,7 +6,7 @@ import numpy as np
 import math
 import os
 from scipy.spatial import distance
-from sklearn.cluster import MeanShift
+from sklearn.cluster import MeanShift, SpectralClustering, AgglomerativeClustering, DBSCAN
 from itertools import compress
 import cv2
 
@@ -45,8 +45,7 @@ def extract_notes(orig_img,
                     img,
          	        outer_radius,
                     inner_radius,
-                    center_x,
-                    center_y,
+                    center_calculation,
                     bwidth,
                     first_track,
                     track_width,
@@ -61,8 +60,7 @@ def extract_notes(orig_img,
     img -- 2d Array of integers representing image with annotated connected components
     outer_radius -- Radius of the outer border of the music disc, unit does not matter but needs to be the same as inner_radius
     inner_radius -- Radius of the inner border (the area containing labels and such but no notes) of the music box disc
-    center_x -- Calculated x coordinate of the center of the disc
-    center_y -- Calculated y coordinate of the center of the disc
+    center_calculation -- Which approach to use for center calculation (standard, mean, mass)
     bwidth -- Bandwidth used with the meanshift algorithm
     first_track -- Relative position of the innnermost track from center to outer border
     track_width -- Average width of each track as relative distance between center and outer border
@@ -98,13 +96,15 @@ def extract_notes(orig_img,
     # Switch x and y around
     outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
 
-    if not use_punchhole:#for non-metal plates: updated center definition
-        #center_x, center_y = alternative_center(outer_border)
+    if center_calculation == "standard":
+        center_x, center_y = musicbox.image.center.calculate_center(canny_image)
+    elif center_calculation == "mean":
+        center_x, center_y = alternative_center(outer_border)
+    elif center_calculation == "mass":
         center_x, center_y = musicbox.image.center.center_of_mass_filled_in(orig_img, outer_border)
+    else:
+        raise ValueError("No valid center calculation was chosen.")
 
-    # print("outer border center calc:", tuplex)
-    # color_image = cv2.circle(img, (tuplex[0], tuplex[1]), 3, (255, 0, 0), 3)
-    # cv2.imshow("ci", color_image)
 
 
     # To find the inner border we calculate the distance from the center
@@ -198,16 +198,21 @@ def extract_notes(orig_img,
     # Now we may start clustering these points
 
     data = np.array(inner_distances)
+    #data = np.array(outer_distances)
     data = data * 1000
     data = np.column_stack((data, np.zeros(len(data))))
     data = data.astype(int)
-    ms = MeanShift(bandwidth = bwidth, bin_seeding = True)
+    ms = MeanShift(bandwidth = bwidth, bin_seeding = True, cluster_all = True )
+    #ms = SpectralClustering(n_clusters=7, eigen_solver='amg', affinity="rbf")
+    #ms = AgglomerativeClustering(n_clusters=7, affinity="euclidean")
+    #ms = DBSCAN(eps=0.3)
     ms.fit(data)
     classes = ms.labels_
     
     # We now go ahead and sort the clusters in ascending order beginning on the inside
 
     inner_assignments = np.column_stack((classes, np.array(inner_distances)))
+    #inner_assignments = np.column_stack((classes, np.array(outer_distances)))
     cluster_ids = np.unique(inner_assignments[:,0])
     means = []
     for cluster in cluster_ids:
@@ -270,9 +275,10 @@ def extract_notes(orig_img,
 
     if debug_dir:
         for i in range(len(centers)):
-            assigned_id = assignments[i, 1]#0 -> shape_id, 1 -> track_id
+            assigned_id = assignments[i, 0]#0 -> shape_id, 1 -> track_id
             point = centers[i]
-            point = (point[1], point[0])
+            #point = (point[1], point[0])
+            point = (point[0], point[1])
             cv2.putText(annotated_image,
                         str(assigned_id),
                         point,
@@ -286,7 +292,7 @@ def extract_notes(orig_img,
 
         # import pdb; pdb.set_trace()
 
-        debug_array = np.column_stack((shape_ids, classes, assignments[:,1], inner_distances))
+        debug_array = np.column_stack((shape_ids, classes, assignments[:,1], inner_distances, outer_distances))
         np.savetxt(os.path.join(debug_dir, "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
 
-    return shapes_dict, assignments, color_image
+    return shapes_dict, assignments, color_image, (center_x, center_y)

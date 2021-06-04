@@ -16,7 +16,9 @@ def change_contrast_brightness(picture, erosion_kernel, noise_kernel, thresh_bin
 
     brighter_picture = np.where((255 - noise_removed) < brightness_val, 255, noise_removed + brightness_val)
     contrast_picture = brighter_picture * contrast_factor
-    #cv2.imwrite("contrast73_4_2.jpg", contrast_picture)
+    # cv2.imshow("processed_picture.jpg", contrast_picture)
+    # cv2.waitKey(0)
+    # sys.exit(1)
 
     return contrast_picture.astype(np.uint8)
 
