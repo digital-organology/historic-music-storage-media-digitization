@@ -42,6 +42,7 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 def extract_notes(orig_img,
+                    canny_image,
                     img,
          	        outer_radius,
                     inner_radius,
@@ -57,6 +58,8 @@ def extract_notes(orig_img,
                     punchhole_side = "left"):          
     """Extract note positions from labeled image.
     Keyword arguments:
+    orig_img -- original image
+    canny_img -- output from canny edge detection or preprocessing
     img -- 2d Array of integers representing image with annotated connected components
     outer_radius -- Radius of the outer border of the music disc, unit does not matter but needs to be the same as inner_radius
     inner_radius -- Radius of the inner border (the area containing labels and such but no notes) of the music box disc
