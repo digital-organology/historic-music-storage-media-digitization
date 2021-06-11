@@ -9,6 +9,7 @@ from scipy.spatial import distance
 from sklearn.cluster import MeanShift
 from itertools import compress
 import cv2
+import json
 
 def _fix_empty_tracks(data_array, first_track, track_width):
     mean_dists = []
@@ -54,7 +55,8 @@ def extract_notes(img,
                     absolute_mode = False,
                     debug_dir = None,
                     use_punchhole = False,
-                    punchhole_side = "left"):          
+                    punchhole_side = "left",
+                    create_json = False):          
     """Extract note positions from labeled image.
     Keyword arguments:
     img -- 2d Array of integers representing image with annotated connected components
@@ -286,5 +288,20 @@ def extract_notes(img,
 
         debug_array = np.column_stack((shape_ids, classes, assignments[:,1], inner_distances))
         np.savetxt(os.path.join(debug_dir, "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
+
+        if create_json:
+            output = {}
+            json_data = []
+            for i in range(len(shape_ids)):
+                shape_data = {}
+                shape_data["id"] = int(shape_ids[i])
+                shape_data["track"] = int(assignments[i, 1])
+                shape_data["points"] = [(int(x), int(y)) for (x, y) in shapes[i].tolist()] # shapes[i].astype(int).tolist()
+                # import pdb; pdb.set_trace()
+                json_data.append(shape_data)
+            output["data"] = json_data
+            with open(os.path.join(debug_dir, "data.json"), "w", encoding="utf8") as f:
+                json.dump(output, f, indent=4)
+
 
     return shapes_dict, assignments, color_image
