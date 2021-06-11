@@ -1,6 +1,31 @@
 .inactive {
+
 }
 
 .active {
-    fill: rgb(82, 255, 67);
+    stroke: red;
+    stroke-width: 3px;
+}
+
+.selectionView {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border: 1px solid black;
+}
+
+.coloredSquare {
+    
+}
+
+.inline {
+    display: inline;
+}
+
+.selection {
+    display: block;
+}
+
+body {
+    font-size: larger;
 }
