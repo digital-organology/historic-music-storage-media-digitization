@@ -1,10 +1,22 @@
 // Creates canvas 320 × 200 at 10, 50
-var paper = Raphael(10, 50, 320, 200);
+var paper = Raphael(0, 0, 4000, 3500);
 
-// Creates circle at x = 50, y = 40, with radius 10
-var circle = paper.circle(50, 40, 10);
-// Sets the fill attribute of the circle to red (#f00)
-circle.attr("fill", "#f00");
 
-// Sets the stroke attribute of the circle to white
-circle.attr("stroke", "#fff");
+fetch("test_data.json").then(res => res.json()).then(data => {
+    arr = data["data"];
+
+ 
+    for (var obj of arr) {
+
+        var id = obj["id"];
+        console.log(id);
+        var track = obj["track"];
+        var points = obj["points"];
+
+        points.forEach(function (point, idx) {
+
+            var rect = paper.rect(point[0], point[1], 0.001, 0.001);
+            rect.attr("stroke", "green");
+        });
+    };
+});
