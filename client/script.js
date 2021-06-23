@@ -7,12 +7,14 @@ var containerWidth  = 8500;
 var centerX = -1;
 var centerY = -1;
 var paper = Raphael("container", containerWidth, containerHeight);
-//paper.setViewBox(0, 0);
+// paper.setViewBox(-200, -50);
 // paper.setViewBox(0, 0, 5000, 5000, true);
-// paper.setSize('70%', '70%');
+// paper.setSize('100%', '100%');
 
 // var selectionViewCoords = [];
 var maxTrackId = 0;
+var clickedNotes = new Set();
+var currentTrackId = -1;
 
 const CSS_COLOR_NAMES = [
     "#8dd3c7",
@@ -33,64 +35,60 @@ const CSS_COLOR_NAMES = [
 // initialise navigation position
 var currentX = 0;
 var currentY = 0;
-var currentS = 4500;
+var currentS = 8500;
 
-$("#right").on("click",function(){
-    currentX = currentX - 0.05 * currentX;
- paper.setViewBox(currentX, currentY, currentS, currentS, true);
-   
-});
-
-$("#left").on("click",function(){
-    currentX = currentX + 0.05 * currentX;
- paper.setViewBox(currentX, currentY, currentS, currentS, true);
-   
-   
-});
-$("#down").on("click",function(){
-     currentY = currentY - 0.05 * currentY;
- paper.setViewBox(currentX, currentY, currentS, currentS, true);
-});
-
-$("#up").on("click",function(){
-      currentY = currentY + 0.05 * currentY;
- paper.setViewBox(currentX, currentY, currentS, currentS, true);
-   
-});
 
 $("#zoomout").on("click",function(){
-      currentS = currentS + 0.1 * currentS;
- paper.setViewBox(currentX, currentY, currentS, currentS, true);
+    currentS = currentS + 0.1 * currentS;
+    paper.setViewBox(0, 0, currentS, currentS, true);
+    console.log(currentS);
    
 });
 $("#zoomin").on("click",function(){
-      currentS = currentS - 0.1 * currentS;
-      $("#container").css("top", "100px");
- paper.setViewBox(currentX, currentY, currentS, currentS, true);
+    currentS = currentS - 0.1 * currentS;
+    $("#container").css("top", "100px");
+    paper.setViewBox(0, 0, currentS, currentS, true);
    
 });
 
 
 $("#full").on("click",function(){
-    currentX = 0;
-    currentY = 0;
-    currentS = 4500;
-    paper.setViewBox(currentX, currentY, currentS, currentS, true);
+    currentS = 39057;
+    paper.setViewBox(-200, -50, currentS, currentS, true);
 });
 
 
 
 function onNoteClick(e) {
-    var trackId = e.target.dataset.track;
-    var noteId  = e.target.id;
-    var color   = CSS_COLOR_NAMES[trackId % CSS_COLOR_NAMES.length];
-    $("#presentShapeValue").html(noteId);
+    
+    if (clickedNotes.size == 0) {
+        currentTrackId = e.target.dataset.track;
+        clickedNotes.add(e.target.id);
+    } else { // check if trackID matches
+        if (currentTrackId === e.target.dataset.track) {
+            clickedNotes.add(e.target.id);
+        } else {
+            currentTrackId = e.target.dataset.track;
+            clickedNotes.clear();
+            clickedNotes.add(e.target.id);
+        }
+    }
 
-    $("#presentTrackValue").html(trackId);
+    
+
+    // var trackId = e.target.dataset.track;
+    // var noteId  = e.target.id;
+    // var color   = CSS_COLOR_NAMES[trackId % CSS_COLOR_NAMES.length];
+    // $("#presentShapeValue").html(noteId);
+    $("#presentShapeValue").html(Array.from(clickedNotes).join(', '));
+    var color   = CSS_COLOR_NAMES[currentTrackId % CSS_COLOR_NAMES.length];
+
+
+    $("#presentTrackValue").html(currentTrackId);
     $("#presentTrackColor").css("background-color", color);
 
-    var trackUp   = trackId > 1           ? trackId-1 : trackId;
-    var trackDown = trackId < maxTrackId  ? parseInt(trackId)+1 : trackId;
+    var trackUp   = currentTrackId > 1           ? currentTrackId-1 : currentTrackId;
+    var trackDown = currentTrackId < maxTrackId  ? parseInt(currentTrackId)+1 : currentTrackId;
 
     $("#track1Value").html(trackUp);
     $("#track2Value").html(trackDown);
@@ -162,23 +160,29 @@ fetch("data.json")
     
     $("#track1Color").on("click", function(d) {
         var newTrack = $("#track1Value").html();
-        var shapeId  = $("#presentShapeValue").html();
-        setNewTrackForShape(shapeId, newTrack);
+        // var shapeId  = $("#presentShapeValue").html();
+        // setNewTrackForShape(shapeId, newTrack);
+        setNewTrackForShape(newTrack);
 
     });
 
     $("#track2Color").on("click", function(d) {
         var newTrack = $("#track2Value").html();
-        var shapeId  = $("#presentShapeValue").html();
-        setNewTrackForShape(shapeId, newTrack);
+        // var shapeId  = $("#presentShapeValue").html();
+        // setNewTrackForShape(shapeId, newTrack);
+        setNewTrackForShape(newTrack);
 
     });
 
 
-    function setNewTrackForShape(shapeId, newTrackId)
-    {
-        $("#"+shapeId).attr("fill", CSS_COLOR_NAMES[newTrackId % CSS_COLOR_NAMES.length]);
-        $("#"+shapeId).attr("data-track", newTrackId);
+    // function setNewTrackForShape(shapeId, newTrackId)
+    function setNewTrackForShape(newTrackId)
+    {   
+        clickedNotes.forEach(function(shapeId) {
+            $("#"+shapeId).attr("fill", CSS_COLOR_NAMES[newTrackId % CSS_COLOR_NAMES.length]);
+            $("#"+shapeId).attr("data-track", newTrackId);
+        });
+        clickedNotes.clear();
     }
 
     $("#save-btn").on("click", function(d) {
