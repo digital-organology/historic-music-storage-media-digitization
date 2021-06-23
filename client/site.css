@@ -7,6 +7,15 @@
     stroke-width: 3px;
 }
 
+.deselect {
+
+}
+
+.select {
+    stroke: blue;
+    stroke-width: 5px;
+}
+
 .selectionView {
     position: absolute;
     width: 300px;
