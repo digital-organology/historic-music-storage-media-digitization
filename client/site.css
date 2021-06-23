@@ -28,6 +28,8 @@
 
 body {
     font-size: larger;
+    width: 100%;
+    height: 100%;
 }
 
 
@@ -56,4 +58,8 @@ body {
     top: 50px;
     z-index: 1000;
     overflow: visible;
+    /* width: 15vh; */
+    /* width: 30%;
+    height: 15%; */
+
 }

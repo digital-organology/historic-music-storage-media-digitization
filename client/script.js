@@ -2,30 +2,13 @@ $('#main-recent-filter').toggle();
 $('#main-recent-filter').draggable();
 
 // Creates canvas 320 × 200 at 10, 50
-var paper = Raphael("container");
-paper.setViewBox(0, 0, 3300, 3200, true);
+var paper = Raphael("container", 4500, 4500);
+// paper.setViewBox(0, 0, 4500, 4500);//, true);
+// paper.setViewBox(0, 0, 5000, 5000, true);
+// paper.setSize('500%', '500%');
 
-function onNoteClick(e) {
-    var trackId = e.target.dataset.track;
-    var noteId  = e.target.id;
-    var color   = CSS_COLOR_NAMES[trackId];
-
-    $("#presentShapeValue").html(noteId);
-
-    $("#presentTrackValue").html(trackId);
-    $("#presentTrackColor").css("background-color", color);
-
-    var trackUp   = trackId > 1           ? trackId-1 : trackId;
-    var trackDown = trackId < maxTrackId  ? parseInt(trackId)+1 : trackId;
-
-    $("#track1Value").html(trackUp);
-    $("#track2Value").html(trackDown);
-
-    $("#track1Color").css("background-color", CSS_COLOR_NAMES[trackUp]);
-    $("#track2Color").css("background-color", CSS_COLOR_NAMES[trackDown]);
-
-//    alert("Note ID: ".concat(e.target.id).concat("; Track ID: ").concat(e.target.dataset.track));
-}
+// var selectionViewCoords = [];
+var maxTrackId = 0;
 /* List of useful colors
 #8dd3c7
 #ffffb3
@@ -190,6 +173,77 @@ const CSS_COLOR_NAMES = [
     "YellowGreen",
   ];
 
+// initialise navigation position
+var currentX = 0;
+var currentY = 0;
+var currentS = 3500;
+
+$("#right").on("click",function(){
+    currentX = currentX - 0.05 * currentX;
+ paper.setViewBox(currentX, currentY, currentS, currentS, true);
+   
+});
+
+$("#left").on("click",function(){
+    currentX = currentX + 0.05 * currentX;
+ paper.setViewBox(currentX, currentY, currentS, currentS, true);
+   
+   
+});
+$("#down").on("click",function(){
+     currentY = currentY - 0.05 * currentY;
+ paper.setViewBox(currentX, currentY, currentS, currentS, true);
+});
+
+$("#up").on("click",function(){
+      currentY = currentY + 0.05 * currentY;
+ paper.setViewBox(currentX, currentY, currentS, currentS, true);
+   
+});
+
+$("#zoomout").on("click",function(){
+      currentS = currentS + 0.1 * currentS;
+ paper.setViewBox(currentX, currentY, currentS, currentS, true);
+   
+});
+$("#zoomin").on("click",function(){
+      currentS = currentS - 0.1 * currentS;
+ paper.setViewBox(currentX, currentY, currentS, currentS, true);
+   
+});
+
+
+$("#full").on("click",function(){
+    currentX = 0;
+    currentY = 0;
+    currentS = 4500;
+    paper.setViewBox(currentX, currentY, currentS, currentS, true);
+});
+
+
+
+function onNoteClick(e) {
+    var trackId = e.target.dataset.track;
+    var noteId  = e.target.id;
+    var color   = CSS_COLOR_NAMES[trackId];
+
+    $("#presentShapeValue").html(noteId);
+
+    $("#presentTrackValue").html(trackId);
+    $("#presentTrackColor").css("background-color", color);
+
+    var trackUp   = trackId > 1           ? trackId-1 : trackId;
+    var trackDown = trackId < maxTrackId  ? parseInt(trackId)+1 : trackId;
+
+    $("#track1Value").html(trackUp);
+    $("#track2Value").html(trackDown);
+
+    $("#track1Color").css("background-color", CSS_COLOR_NAMES[trackUp]);
+    $("#track2Color").css("background-color", CSS_COLOR_NAMES[trackDown]);
+
+//    alert("Note ID: ".concat(e.target.id).concat("; Track ID: ").concat(e.target.dataset.track));
+}
+
 function hightlightNote(e) {
     track = e.target.dataset.track;
     trackElements = document.querySelectorAll('[data-track="' + track + '"]');
@@ -208,8 +262,14 @@ function lowlightNote(e) {
     })
 }
 
-var selectionViewCoords = [];
-var maxTrackId = 0;
+function onSaveClick(e) {
+    alert("Save changes");
+}
+
+function onDiscardClick(e) {
+    alert("Discard changes");
+}
+
 
 
 
@@ -228,7 +288,7 @@ fetch("data.json")
             $("#".concat(node_id)).on("mouseout", lowlightNote);
             maxTrackId = Math.max(maxTrackId, shape.track);
         });
-        selectionViewCoords = data["center"];
+        // selectionViewCoords = data["center"];
 
     // $("body").append("<div id='selectionView' class='selectionView'></div>");
     $("#selectionView").css("top", 200);//selectionViewCoords[1]-selectionViewCoords[2]/2);
@@ -266,11 +326,3 @@ fetch("data.json")
     });
 
 });
-
-function onSaveClick(e) {
-    alert("Save changes");
-}
-
-function onDiscardClick(e) {
-    alert("Discard changes");
-}
