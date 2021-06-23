@@ -3,9 +3,9 @@ $('#main-recent-filter').draggable();
 
 // Creates canvas 320 × 200 at 10, 50
 var paper = Raphael("container", 4500, 4500);
-// paper.setViewBox(0, 0, 4500, 4500);//, true);
+paper.setViewBox(0, 0);
 // paper.setViewBox(0, 0, 5000, 5000, true);
-// paper.setSize('500%', '500%');
+// paper.setSize('70%', '70%');
 
 // var selectionViewCoords = [];
 var maxTrackId = 0;
@@ -176,7 +176,7 @@ const CSS_COLOR_NAMES = [
 // initialise navigation position
 var currentX = 0;
 var currentY = 0;
-var currentS = 3500;
+var currentS = 4500;
 
 $("#right").on("click",function(){
     currentX = currentX - 0.05 * currentX;

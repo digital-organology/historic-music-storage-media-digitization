@@ -52,13 +52,14 @@ body {
 } 
 
 #main-recent-filter {
-    position:fixed;
+    position:absolute;
     display: none;
     left: 50vw;
     top: 50px;
     z-index: 1000;
     overflow: visible;
-    /* width: 15vh; */
+    width: 15vh;
+    zoom: 200%;
     /* width: 30%;
     height: 15%; */
 
