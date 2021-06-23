@@ -29,3 +29,31 @@
 body {
     font-size: larger;
 }
+
+
+#main-recent-filter-inner {
+    background-color: white;
+    position:absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    border-radius:2px;
+    border-width:0;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+}
+  
+.main-recent-filter-body:after { 
+    content: " "; 
+    display: block;
+    clear: both;
+} 
+
+#main-recent-filter {
+    position:fixed;
+    display: none;
+    left: 50vw;
+    top: 50px;
+    z-index: 1000;
+    overflow: visible;
+}

@@ -10,6 +10,7 @@ from sklearn.cluster import MeanShift
 from itertools import compress
 import cv2
 import json
+import alphashape
 
 def _fix_empty_tracks(data_array, first_track, track_width):
     mean_dists = []
@@ -291,17 +292,17 @@ def extract_notes(img,
 
         if create_json:
             output = {}
-            json_data = []
-            for i in range(len(shape_ids)):
-                shape_data = {}
-                shape_data["id"] = int(shape_ids[i])
-                shape_data["track"] = int(assignments[i, 1])
-                shape_data["points"] = [(int(x), int(y)) for (x, y) in shapes[i].tolist()] # shapes[i].astype(int).tolist()
-                # import pdb; pdb.set_trace()
-                json_data.append(shape_data)
-            output["data"] = json_data
-            with open(os.path.join(debug_dir, "data.json"), "w", encoding="utf8") as f:
-                json.dump(output, f, indent=4)
+        json_data = []
+        for i in range(len(shape_ids)):
+            shape_data = {}
+            shape_data["id"] = int(shape_ids[i])
+            shape_data["track"] = int(assignments[i, 1])
+            shape_data["points"] = [(int(x), int(y)) for (x, y) in shapes[i].tolist()] # shapes[i].astype(int).tolist()
+            # import pdb; pdb.set_trace()
+            json_data.append(shape_data)
+        output["data"] = json_data
+        with open(os.path.join(debug_dir, "data.json"), "w", encoding="utf8") as f:
+            json.dump(output, f, indent=4)
 
 
     return shapes_dict, assignments, color_image

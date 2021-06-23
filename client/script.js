@@ -1,5 +1,9 @@
+$('#main-recent-filter').toggle();
+$('#main-recent-filter').draggable();
+
 // Creates canvas 320 × 200 at 10, 50
-var paper = Raphael(0, 0, 4000, 3500);
+var paper = Raphael("container");
+paper.setViewBox(0, 0, 3300, 3200, true);
 
 function onNoteClick(e) {
     var trackId = e.target.dataset.track;
@@ -9,7 +13,7 @@ function onNoteClick(e) {
     $("#presentShapeValue").html(noteId);
 
     $("#presentTrackValue").html(trackId);
-    $("#presentTrackColor").css("color", color);
+    $("#presentTrackColor").css("background-color", color);
 
     var trackUp   = trackId > 1           ? trackId-1 : trackId;
     var trackDown = trackId < maxTrackId  ? parseInt(trackId)+1 : trackId;
@@ -17,8 +21,8 @@ function onNoteClick(e) {
     $("#track1Value").html(trackUp);
     $("#track2Value").html(trackDown);
 
-    $("#track1Color").css("color", CSS_COLOR_NAMES[trackUp]);
-    $("#track2Color").css("color", CSS_COLOR_NAMES[trackDown]);
+    $("#track1Color").css("background-color", CSS_COLOR_NAMES[trackUp]);
+    $("#track2Color").css("background-color", CSS_COLOR_NAMES[trackDown]);
 
 //    alert("Note ID: ".concat(e.target.id).concat("; Track ID: ").concat(e.target.dataset.track));
 }
@@ -207,6 +211,8 @@ function lowlightNote(e) {
 var selectionViewCoords = [];
 var maxTrackId = 0;
 
+
+
 fetch("data.json")
     .then(res => res.json())
     .then(data => {
@@ -216,6 +222,7 @@ fetch("data.json")
             node_id = "shape_".concat(shape.id);
             note.node.id = node_id;
             note.node.dataset.track = shape.track;
+            note.node.dataset.points = shape.points;
             $("#".concat(node_id)).click(onNoteClick);
             $("#".concat(node_id)).on("mouseenter", hightlightNote);
             $("#".concat(node_id)).on("mouseout", lowlightNote);
@@ -223,45 +230,21 @@ fetch("data.json")
         });
         selectionViewCoords = data["center"];
 
-    $("body").append("<div id='selectionView' class='selectionView'></div>");
-    $("#selectionView").css("top", selectionViewCoords[1]-selectionViewCoords[2]/2);
-    $("#selectionView").css("left", selectionViewCoords[0]-selectionViewCoords[2]/2);
-    $("#selectionView").css("width", selectionViewCoords[2]);
-    $("#selectionView").css("height", selectionViewCoords[2]);
+    // $("body").append("<div id='selectionView' class='selectionView'></div>");
+    $("#selectionView").css("top", 200);//selectionViewCoords[1]-selectionViewCoords[2]/2);
+    $("#selectionView").css("left", 500);//, selectionViewCoords[0]-selectionViewCoords[2]/2);
+    $("#selectionView").css("width", 200);//, selectionViewCoords[2]);
+    $("#selectionView").css("height", 80);//, selectionViewCoords[2]);
     
-    $("#selectionView").append("<div id='selectionWrapper'></div>");
-    $("#selectionWrapper").append("<div id='shapeWrapper'></div>");
-    $("#shapeWrapper").append("<label id='presentShapeLabel' class='inline'>Shape-Id: </label>");
-    $("#shapeWrapper").append("<div id='presentShapeValue' class='inline'></div>");
-
-    
-    $("#selectionWrapper").append("<div id='trackWrapper'></div>");
-    $("#trackWrapper").append("<label id='presentTrackLabel' class='inline'>Spur-Id: </label>");
-    $("#trackWrapper").append("<div id='presentTrackValue' class='inline'></div>");
-    $("#trackWrapper").append("<label id='presentTrackColor' class='coloredSquare'> ◼</label>");
-
-    $("#selectionView").append("<div id='selection1Wrapper' class='selection inline'></div>");
-    $("#selectionView").append("<div id='selection2Wrapper' class='selection inline'></div>");
-
-    
-    $("#selection1Wrapper").append("<div id='track1Label' class='inline'>Tiefere Spur: </div>");
-    $("#selection1Wrapper").append("<div id='track1Value' class='data inline'</div>");
-    $("#selection1Wrapper").append("<div id='track1Color' class='inline'> ◼</div>");
-
-    $("#selection2Wrapper").append("<div id='track2Label' class='inline'>Höhere Spur: </div>");
-    $("#selection2Wrapper").append("<div id='track2Value' class='data inline'></div>");
-    $("#selection2Wrapper").append("<div id='track2Color' class='inline'> ◼</div>");
-
-    $("#selection1Wrapper").on("click", function(d) {
-        
-        var newTrack = $(this).children(".data").html();
+    $("#track1Color").on("click", function(d) {
+        var newTrack = $("#track1Value").html();
         var shapeId  = $("#presentShapeValue").html();
         setNewTrackForShape(shapeId, newTrack);
 
     });
-    $("#selection2Wrapper").on("click", function(d) {
-        
-        var newTrack = $(this).children(".data").html();
+
+    $("#track2Color").on("click", function(d) {
+        var newTrack = $("#track2Value").html();
         var shapeId  = $("#presentShapeValue").html();
         setNewTrackForShape(shapeId, newTrack);
 
@@ -274,9 +257,20 @@ fetch("data.json")
         $("#"+shapeId).attr("data-track", newTrackId);
     }
 
+    $("#save-btn").on("click", function(d) {
+        onSaveClick();
+    });
+
+    $("#discard-btn").on("click", function(d) {
+        onDiscardClick();
+    });
+
 });
 
+function onSaveClick(e) {
+    alert("Save changes");
+}
 
-
-
-
+function onDiscardClick(e) {
+    alert("Discard changes");
+}

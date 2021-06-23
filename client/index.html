@@ -10,16 +10,60 @@
     <!-- Load stuff -->
 
     <script type="text/javascript" src="libs/raphael.min.js"></script>
-    <script type="text/javascript" src="libs/jquery.min.js"></script>
+    <script data-require="jquery@*" data-semver="2.2.0" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script data-require="bootstrap@*" data-semver="3.3.6" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <link data-require="bootstrap-css@3.3.6" data-semver="3.3.6" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> 
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" href="site.css" />
 
 </head>
 <body>
 
-<!-- Load our scripts -->
-<div id="container"></div>
 
-<script type="text/javascript" src="script.js"></script>
+
+    <div id="main-recent-filter" class="modal-body draggable">
+        <table class="table table-hover table-sm">
+
+            <tbody>
+            <tr>
+                <th scope="col">Shape-ID:</th>
+                <th scope="row">
+                    <div id="presentShapeValue" class="inline"></div>
+                </th>
+                </tr>
+                <tr>
+                <th scope="col">Spur-ID:</th>
+                <td scope="row">
+                    <div id="presentTrackValue" class="data inline"></div>
+                    <td id="presentTrackColor" class="bg-primary"></td>
+                </td>
+                </tr>
+            <tr>
+                <th id="selection1Wrapper" scope="row">Tiefere Spur:</th>
+                <td>
+                    <div id="track1Value" class="data inline"></div>
+                    <td id="track1Color" class="bg-primary"></td>
+                </td>
+            </tr>
+            <tr>
+                <th id="selection2Wrapper" scope="row">Höhere Spur:</th>
+                <td>
+                    <div id="track2Value" class="data inline"></div>
+                    <td id="track2Color" class="bg-primary"> </td>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <button type="button" class="btn btn-success btn-sm" id="save-btn" >Save Changes</button>
+        <button type="button" class="btn btn-danger btn-sm" id="discard-btn" >Discard</button>
+    </div>
+    
+    
+    <div id="container"></div>
+    <script type="text/javascript" src="script.js"></script>
 
 </body>
+
+
 </html>
