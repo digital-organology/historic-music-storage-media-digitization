@@ -3,6 +3,7 @@ import os
 import sys
 import inspect
 import numpy as np
+import tempfile
 from musicbox.notes.convert import convert_notes
 from musicbox.notes.midi import create_midi
 
@@ -27,6 +28,10 @@ def generateMidi():
     # json = dict(zip(list(map(int, list(app.shape_dict.keys()))), list(map(int, list(app.assignments)))))
     # return json
 
+    # new_file, filename = tempfile.mkstemp()
+
+    # filename += ".mid"
+
     data = flask.request.json
 
     assignments = np.array(list(data.items())).astype(np.int64)
@@ -37,9 +42,10 @@ def generateMidi():
     per = [4, 1, 2, 3, 0]
     arr[:] = arr[:,per]
 
-    create_midi(arr, app.track_mappings, 144, "flask_output.mid", 200)
+    create_midi(arr, app.track_mappings, 144, "client/flask_midi.mid" , 200)
 
-    return flask.send_file("../flask_output.mid")
+    return "tool/flask_midi.mid"
+    # return flask.send_file(filename)
     # shape_ids = []
 
     
