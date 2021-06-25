@@ -226,12 +226,14 @@ fetch("data.json")
         fetch("/generate-midi", {
             method: 'POST',
             headers: {
-                'Accept': 'audio/midi',
+                'Accept': 'text/plain',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(json) 
         })
-            .then(data => console.log(data));
+            .then(data => {
+                MIDIjs.play('/tool/flask_midi.mid');
+            });
     });
 
 
