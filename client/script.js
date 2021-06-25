@@ -197,11 +197,11 @@ fetch("data.json")
     });
 
     $("#play-btn").on("click", function(d) {
-
         var json = {};
-        for (let element of document.querySelectorAll('path')) {
-            json[$(element).attr('id')] = $(element).attr('data-track');            
-          }
+
+        document.querySelectorAll("path").forEach(node => {
+            json[node.id.replace("shape_", "")] = node.dataset.track
+        });
 
         fetch("/generate-midi", {
             method: 'POST',
