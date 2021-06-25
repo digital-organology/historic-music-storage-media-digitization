@@ -5,6 +5,7 @@ import musicbox.image.label
 import numpy as np
 import math
 import os
+import sys
 from scipy.spatial import distance
 from sklearn.cluster import MeanShift
 from itertools import compress
@@ -290,19 +291,23 @@ def extract_notes(img,
         debug_array = np.column_stack((shape_ids, classes, assignments[:,1], inner_distances))
         np.savetxt(os.path.join(debug_dir, "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
 
-        if create_json:
-            output = {}
+    if create_json:
+        print(sys.path[0])
+        output = {}
         json_data = []
         for i in range(len(shape_ids)):
             shape_data = {}
             shape_data["id"] = int(shape_ids[i])
             shape_data["track"] = int(assignments[i, 1])
-            shape_data["points"] = [(int(x), int(y)) for (x, y) in shapes[i].tolist()] # shapes[i].astype(int).tolist()
+            # import pdb; pdb.set_trace()
+            ashape = alphashape.alphashape(shapes[i].tolist(), 0.)
+            shape_data["points"] = "M" + "L".join([str(x) + "," + str(y) for (x, y) in np.asarray(ashape.exterior.coords).tolist()]) + "Z"
             # import pdb; pdb.set_trace()
             json_data.append(shape_data)
         output["data"] = json_data
-        with open(os.path.join(debug_dir, "data.json"), "w", encoding="utf8") as f:
-            json.dump(output, f, indent=4)
+        output["center"] = [center_x, center_y, inner_radius_calc]
+        with open(os.path.join(sys.path[0], "client", "data.json"), "w", encoding="utf8") as f:
+            json.dump(output, f, indent = 4)
 
 
     return shapes_dict, assignments, color_image
