@@ -1,9 +1,5 @@
 import flask
-import os
-import sys
-import inspect
 import numpy as np
-import tempfile
 from musicbox.notes.convert import convert_notes
 from musicbox.notes.midi import create_midi
 
@@ -24,10 +20,6 @@ def send_map(path):
 
 @app.route('/generate-midi', methods = ['POST'])
 def generateMidi():
-    # import pdb; pdb.set_trace()
-    # json = dict(zip(list(map(int, list(app.shape_dict.keys()))), list(map(int, list(app.assignments)))))
-    # return json
-
     # new_file, filename = tempfile.mkstemp()
 
     # filename += ".mid"
