@@ -1,17 +1,9 @@
-//$('#main-recent-filter').toggle();
-//$('#main-recent-filter').draggable();
-
-// Creates canvas 320 × 200 at 10, 50
 var containerHeight = 8500;
 var containerWidth  = 8500;
 var centerX = -1;
 var centerY = -1;
 var paper = Raphael("container", containerWidth, containerHeight);
-// paper.setViewBox(-200, -50);
-// paper.setViewBox(0, 0, 5000, 5000, true);
-// paper.setSize('100%', '100%');
 
-// var selectionViewCoords = [];
 var maxTrackId = 0;
 var clickedNotes = new Set();
 var currentTrackId = -1;
@@ -60,33 +52,36 @@ $("#full").on("click",function(){
 
 
 function onNoteClick(e) {
-    
-    if (clickedNotes.size == 0) {
-        currentTrackId = e.target.dataset.track;
-        clickedNotes.add(e.target.id);
+    var shapeId = e.target.id;
+
+    if (clickedNotes.has(shapeId)) {
+        clickedNotes.delete(shapeId);
+        e.target.classList.remove("select");
+        e.target.classList.add("deselect");
         
-    } else { // check if trackID matches
-        if (currentTrackId === e.target.dataset.track) {
-            clickedNotes.add(e.target.id);
+    } else {
+        if (clickedNotes.size == 0) {
+        currentTrackId = e.target.dataset.track;
+        clickedNotes.add(shapeId);
+        
+        } else { // check if trackID matches
+            if (currentTrackId === e.target.dataset.track) {
+                clickedNotes.add(shapeId);
 
-        } else {
-            lowlightNote(currentTrackId);
-            clickedNotes.clear();
-
-            currentTrackId = e.target.dataset.track;
-            clickedNotes.add(e.target.id);
-
+            } else {
+                lightNotes(currentTrackId);
+                clickedNotes.clear();
+                currentTrackId = e.target.dataset.track;
+                clickedNotes.add(shapeId);
+            }
         }
-    }
+
     e.target.classList.add("select");
-    
+    } 
 
     
+    
 
-    // var trackId = e.target.dataset.track;
-    // var noteId  = e.target.id;
-    // var color   = CSS_COLOR_NAMES[trackId % CSS_COLOR_NAMES.length];
-    // $("#presentShapeValue").html(noteId);
     $("#presentShapeValue").html(Array.from(clickedNotes).join(', '));
     var color   = CSS_COLOR_NAMES[currentTrackId % CSS_COLOR_NAMES.length];
 
@@ -103,13 +98,8 @@ function onNoteClick(e) {
     $("#track1Color").css("background-color", CSS_COLOR_NAMES[trackUp % CSS_COLOR_NAMES.length]);
     $("#track2Color").css("background-color", CSS_COLOR_NAMES[trackDown % CSS_COLOR_NAMES.length]);
 
-//    alert("Note ID: ".concat(e.target.id).concat("; Track ID: ").concat(e.target.dataset.track));
 }
 
-// function highlightNote(e) {
-//     note = e.target.id;
-
-// }
 
 function highlightTrack(e) {
     track = e.target.dataset.track;
@@ -129,13 +119,14 @@ function lowlightTrack(e) {
     })
 }
 
-function lowlightNote(track) {
+function lightNotes(track) {
     trackElements = document.querySelectorAll('[data-track="' + track + '"]');
     trackElements.forEach(node => {
         node.classList.remove("select");
         node.classList.add("deselect");
     })
 }
+
 
 function onSaveClick(e) {
     alert("Save changes");
@@ -166,39 +157,30 @@ fetch("data.json")
             centerX = data["center"][0];
             centerY = data["center"][1];
             
-           // $("#main-recent-filter").css("top", centerY - parseInt($("#main-recent-filter").css("height")));
-            //$("#main-recent-filter").css("left", centerX - parseInt($("#main-recent-filter").css("width")));
 
         });
-        // selectionViewCoords = data["center"];
 
-    // $("body").append("<div id='selectionView' class='selectionView'></div>");
-    $("#selectionView").css("top", 200);//selectionViewCoords[1]-selectionViewCoords[2]/2);
-    $("#selectionView").css("left", 500);//, selectionViewCoords[0]-selectionViewCoords[2]/2);
-    $("#selectionView").css("width", 200);//, selectionViewCoords[2]);
-    $("#selectionView").css("height", 80);//, selectionViewCoords[2]);
+    $("#selectionView").css("top", 200);
+    $("#selectionView").css("left", 500);
+    $("#selectionView").css("width", 200);
+    $("#selectionView").css("height", 80);
     
     $("#track1Color").on("click", function(d) {
         var newTrack = $("#track1Value").html();
-        // var shapeId  = $("#presentShapeValue").html();
-        // setNewTrackForShape(shapeId, newTrack);
         setNewTrackForShape(newTrack);
 
     });
 
     $("#track2Color").on("click", function(d) {
         var newTrack = $("#track2Value").html();
-        // var shapeId  = $("#presentShapeValue").html();
-        // setNewTrackForShape(shapeId, newTrack);
         setNewTrackForShape(newTrack);
 
     });
 
 
-    // function setNewTrackForShape(shapeId, newTrackId)
     function setNewTrackForShape(newTrackId)
     {   
-        lowlightNote(currentTrackId);
+        lightNotes(currentTrackId);
         clickedNotes.forEach(function(shapeId) {
             $("#"+shapeId).attr("fill", CSS_COLOR_NAMES[newTrackId % CSS_COLOR_NAMES.length]);
             $("#"+shapeId).attr("data-track", newTrackId);
@@ -215,15 +197,17 @@ fetch("data.json")
     });
 
     $("#play-btn").on("click", function(d) {
-        let json = null; // Caro has to create json here (!!)
-
+        var jsonData = {};
+        for (let element of document.querySelectorAll('path')) {
+            jsonData[$(element).attr('id')] = $(element).attr('data-track');            
+          }
         fetch("/generate-midi", {
             method: 'POST',
             headers: {
                 'Accept': 'audio/midi',
                 'Content-Type': 'application/json'
             },
-            body: json //Once again, caro has to make this work
+            body: jsonData //Once again, caro has to make this work
         })
             .then(data => console.log(data));
     });
