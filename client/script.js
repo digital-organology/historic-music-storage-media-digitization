@@ -214,4 +214,19 @@ fetch("data.json")
         onDiscardClick();
     });
 
+    $("#play-btn").on("click", function(d) {
+        let json = null; // Caro has to create json here (!!)
+
+        fetch("/generate-midi", {
+            method: 'POST',
+            headers: {
+                'Accept': 'audio/midi',
+                'Content-Type': 'application/json'
+            },
+            body: json //Once again, caro has to make this work
+        })
+            .then(data => console.log(data));
+    });
+
+
 });
