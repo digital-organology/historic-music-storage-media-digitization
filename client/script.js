@@ -215,7 +215,13 @@ fetch("data.json")
     });
 
     $("#play-btn").on("click", function(d) {
-        let json = null; // Caro has to create json here (!!)
+        let json = {};
+
+        document.querySelectorAll("path").forEach(node => {
+            id = node.id.replace("shape_", "")
+            assignment = node.dataset.track
+            json[id] = assignment
+        });
 
         fetch("/generate-midi", {
             method: 'POST',
@@ -223,7 +229,7 @@ fetch("data.json")
                 'Accept': 'audio/midi',
                 'Content-Type': 'application/json'
             },
-            body: json //Once again, caro has to make this work
+            body: JSON.stringify(json) 
         })
             .then(data => console.log(data));
     });
