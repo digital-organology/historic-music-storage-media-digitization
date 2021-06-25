@@ -134,7 +134,7 @@ def main():
     print("{:>10}".format("OK"))
 
     if args.interactive:
-        musicbox.server.run_server()
+        musicbox.server.run_server(shapes_dict, config["track_mappings"], center_x, center_y)
         sys.exit()
 
 
@@ -145,7 +145,7 @@ def main():
 
     print("Calculating position of detected notes... ", end = "")
 
-    arr = musicbox.notes.convert.convert_notes(shapes_dict.values(), shapes_dict.keys(), center_x, center_y)
+    arr = musicbox.notes.convert.convert_notes(shapes_dict.values(), list(shapes_dict.keys()), center_x, center_y)
 
     arr = np.column_stack((arr, assignments[:,1]))
 
@@ -165,7 +165,7 @@ def main():
 
     print("Creating midi output and writing to '", args.output, "'... ", sep = "", end = "")
 
-    musicbox.notes.midi.create_midi(arr, config["track_mappings"], 144, args.output)
+    musicbox.notes.midi.create_midi(arr, config["track_mappings"], 144, args.output, 200)
 
     print("{:>10}".format("OK"))
 
