@@ -58,7 +58,7 @@ function onNoteClick(e) {
         clickedNotes.delete(shapeId);
         e.target.classList.remove("select");
         e.target.classList.add("deselect");
-        
+
     } else {
         if (clickedNotes.size == 0) {
         currentTrackId = e.target.dataset.track;
@@ -197,19 +197,23 @@ fetch("data.json")
     });
 
     $("#play-btn").on("click", function(d) {
-        var jsonData = {};
+
+        var json = {};
         for (let element of document.querySelectorAll('path')) {
-            jsonData[$(element).attr('id')] = $(element).attr('data-track');            
+            json[$(element).attr('id')] = $(element).attr('data-track');            
           }
+
         fetch("/generate-midi", {
             method: 'POST',
             headers: {
-                'Accept': 'audio/midi',
+                'Accept': 'text/plain',
                 'Content-Type': 'application/json'
             },
-            body: jsonData //Once again, caro has to make this work
+            body: JSON.stringify(json) 
         })
-            .then(data => console.log(data));
+            .then(data => {
+                MIDIjs.play('/tool/flask_midi.mid');
+            });
     });
 
 
