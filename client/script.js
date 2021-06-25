@@ -64,15 +64,22 @@ function onNoteClick(e) {
     if (clickedNotes.size == 0) {
         currentTrackId = e.target.dataset.track;
         clickedNotes.add(e.target.id);
+        
     } else { // check if trackID matches
         if (currentTrackId === e.target.dataset.track) {
             clickedNotes.add(e.target.id);
+
         } else {
-            currentTrackId = e.target.dataset.track;
+            lowlightNote(currentTrackId);
             clickedNotes.clear();
+
+            currentTrackId = e.target.dataset.track;
             clickedNotes.add(e.target.id);
+
         }
     }
+    e.target.classList.add("select");
+    
 
     
 
@@ -99,7 +106,12 @@ function onNoteClick(e) {
 //    alert("Note ID: ".concat(e.target.id).concat("; Track ID: ").concat(e.target.dataset.track));
 }
 
-function hightlightNote(e) {
+// function highlightNote(e) {
+//     note = e.target.id;
+
+// }
+
+function highlightTrack(e) {
     track = e.target.dataset.track;
     trackElements = document.querySelectorAll('[data-track="' + track + '"]');
     trackElements.forEach(node => {
@@ -108,12 +120,20 @@ function hightlightNote(e) {
     })
 }
 
-function lowlightNote(e) {
+function lowlightTrack(e) {
     track = e.target.dataset.track;
     trackElements = document.querySelectorAll('[data-track="' + track + '"]');
     trackElements.forEach(node => {
         node.classList.remove("active");
         node.classList.add("inactive");
+    })
+}
+
+function lowlightNote(track) {
+    trackElements = document.querySelectorAll('[data-track="' + track + '"]');
+    trackElements.forEach(node => {
+        node.classList.remove("select");
+        node.classList.add("deselect");
     })
 }
 
@@ -139,8 +159,8 @@ fetch("data.json")
             note.node.dataset.track = shape.track;
             note.node.dataset.points = shape.points;
             $("#".concat(node_id)).click(onNoteClick);
-            $("#".concat(node_id)).on("mouseenter", hightlightNote);
-            $("#".concat(node_id)).on("mouseout", lowlightNote);
+            $("#".concat(node_id)).on("mouseenter", highlightTrack);
+            $("#".concat(node_id)).on("mouseout", lowlightTrack);
             maxTrackId = Math.max(maxTrackId, shape.track);
 
             centerX = data["center"][0];
@@ -178,6 +198,7 @@ fetch("data.json")
     // function setNewTrackForShape(shapeId, newTrackId)
     function setNewTrackForShape(newTrackId)
     {   
+        lowlightNote(currentTrackId);
         clickedNotes.forEach(function(shapeId) {
             $("#"+shapeId).attr("fill", CSS_COLOR_NAMES[newTrackId % CSS_COLOR_NAMES.length]);
             $("#"+shapeId).attr("data-track", newTrackId);
