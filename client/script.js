@@ -4,6 +4,16 @@ var centerX = -1;
 var centerY = -1;
 var paper = Raphael("container", containerWidth, containerHeight);
 
+var activeSelection = false;
+var selectedList = [];
+
+$("#container").mousedown(function(){
+    activeSelection = true;
+}).mouseup(function(){
+    activeSelection = false;
+});
+
+
 var maxTrackId = 0;
 var clickedNotes = new Set();
 var currentTrackId = -1;
@@ -152,6 +162,7 @@ fetch("data.json")
             $("#".concat(node_id)).click(onNoteClick);
             $("#".concat(node_id)).on("mouseenter", highlightTrack);
             $("#".concat(node_id)).on("mouseout", lowlightTrack);
+            $("#".concat(node_id)).addClass("shape");
             maxTrackId = Math.max(maxTrackId, shape.track);
 
             centerX = data["center"][0];
@@ -159,6 +170,18 @@ fetch("data.json")
             
 
         });
+
+        
+    $(".shape").mouseenter(function(){
+    if(activeSelection)
+    {
+        if(!selectedList.includes(this.id))
+        {
+            selectedList.push(this.id);
+            console.log(selectedList);
+        }
+    }
+    });
 
     $("#selectionView").css("top", 200);
     $("#selectionView").css("left", 500);
