@@ -172,13 +172,14 @@ fetch("data.json")
         });
 
         
-    $(".shape").mouseenter(function(){
+    $(".shape").mouseenter(function(e){
     if(activeSelection)
     {
-        if(!selectedList.includes(this.id))
-        {
-            selectedList.push(this.id);
-            console.log(selectedList);
+        tmpId = this.id;
+        if(!selectedList.includes(tmpId))
+        {   
+            selectedList.push(tmpId);
+            onNoteClick(e);
         }
     }
     });
