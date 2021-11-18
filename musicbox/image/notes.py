@@ -5,10 +5,13 @@ import musicbox.image.label
 import numpy as np
 import math
 import os
+import sys
 from scipy.spatial import distance
 from sklearn.cluster import MeanShift
 from itertools import compress
 import cv2
+import json
+import alphashape
 
 def _fix_empty_tracks(data_array, first_track, track_width):
     mean_dists = []
@@ -54,7 +57,8 @@ def extract_notes(img,
                     absolute_mode = False,
                     debug_dir = None,
                     use_punchhole = False,
-                    punchhole_side = "left"):          
+                    punchhole_side = "left",
+                    create_json = False):          
     """Extract note positions from labeled image.
     Keyword arguments:
     img -- 2d Array of integers representing image with annotated connected components
@@ -97,8 +101,8 @@ def extract_notes(img,
     # Switch x and y around
     outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
 
-    if not use_punchhole:#for non-metal plates: updated center definition
-        center_x, center_y = alternative_center(outer_border)
+    # if not use_punchhole:#for non-metal plates: updated center definition
+    #     center_x, center_y = alternative_center(outer_border)
 
     # print("outer border center calc:", tuplex)
     # color_image = cv2.circle(img, (tuplex[0], tuplex[1]), 3, (255, 0, 0), 3)
@@ -126,7 +130,7 @@ def extract_notes(img,
     
     median = np.median(counts)
     lower_bound = median / 3
-    upper_bound = 3 * median
+    upper_bound = 8 * median
 
     shape_candidates = np.where(np.logical_and(counts >= lower_bound, counts <= upper_bound))
     shape_ids = unique[shape_candidates]
@@ -270,7 +274,7 @@ def extract_notes(img,
         for i in range(len(centers)):
             assigned_id = assignments[i, 1]#0 -> shape_id, 1 -> track_id
             point = centers[i]
-            point = (point[1], point[0])
+            point = (point[0], point[1])
             cv2.putText(annotated_image,
                         str(assigned_id),
                         point,
@@ -286,5 +290,24 @@ def extract_notes(img,
 
         debug_array = np.column_stack((shape_ids, classes, assignments[:,1], inner_distances))
         np.savetxt(os.path.join(debug_dir, "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
+
+    if create_json:
+        print(sys.path[0])
+        output = {}
+        json_data = []
+        for i in range(len(shape_ids)):
+            shape_data = {}
+            shape_data["id"] = int(shape_ids[i])
+            shape_data["track"] = int(assignments[i, 1])
+            # import pdb; pdb.set_trace()
+            ashape = alphashape.alphashape(shapes[i].tolist(), 0.)
+            shape_data["points"] = "M" + "L".join([str(x) + "," + str(y) for (x, y) in np.asarray(ashape.exterior.coords).tolist()]) + "Z"
+            # import pdb; pdb.set_trace()
+            json_data.append(shape_data)
+        output["data"] = json_data
+        output["center"] = [center_x, center_y, inner_radius_calc]
+        with open(os.path.join(sys.path[0], "client", "data.json"), "w", encoding="utf8") as f:
+            json.dump(output, f, indent = 4)
+
 
     return shapes_dict, assignments, color_image

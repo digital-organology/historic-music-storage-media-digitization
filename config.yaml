@@ -1,3 +1,56 @@
+ariston:
+  punchholes: False
+  # Radius of the inner label, unit does not matter but has to match the one used for outer radius
+  inner_radius: 1.7
+  # Radius of the entire disc
+  outer_radius: 4.5
+  # Number of beats the disc has
+  number_beats: 144
+  # Bandwidth used for meanshift clustering the tracks
+  bandwidth: 8
+  # How far to look around each pixel when finding connected components in the image
+  search_distance: 1
+  # Average width of each track as relative distance between center and outer border
+  track_width: 0.02267693
+  # Relative position of the innnermost track from center to outer border
+  first_track: 0.42
+  # Total number of tracks on the disc
+  n_tracks: 24
+  # Low threshold for canny algorithm
+  canny_low: 100
+  # High threshold
+  canny_high: 255
+  # Preprocessing parameters
+  thresh_binary: 245
+  erosion_kernel: 3
+  noise_kernel: 5
+  brightness: 100
+  # Mappings of tracks to midi codes
+  track_mappings:
+    1: 45
+    2: 47
+    3: 50
+    4: 52
+    5: 54
+    6: 59
+    7: 61
+    8: 62
+    9: 64
+    10: 66
+    11: 68
+    12: 69
+    13: 71
+    14: 73
+    15: 74
+    16: 75
+    17: 76
+    18: 78
+    19: 79
+    20: 80
+    21: 81
+    22: 83
+    23: 85
+    24: 86
 default:
   punchholes: False
   # Radius of the inner label, unit does not matter but has to match the one used for outer radius
