@@ -9,6 +9,7 @@ import musicbox.image.label
 import musicbox.image.canny
 import musicbox.image.center
 import musicbox.image.notes
+import musicbox.server
 import musicbox.notes.convert
 import musicbox.notes.midi
 from musicbox.image.processing import change_contrast_brightness
@@ -25,8 +26,9 @@ def main():
     parser.add_argument("-d", "--debug-dir", default = None, help = "If specified write shape / track colored files\
                                                                      and number annotation to output directory ")
     parser.add_argument("-s", "--skip-canny", dest = "canny", action = "store_false")
-    parser.add_argument("-i", "--img-preprocessing", dest = "prepro", action = "store_true",
+    parser.add_argument("-p", "--preprocessing", dest = "prepro", action = "store_true",
                         help = "Perform different image processing steps like erosion.")
+    parser.add_argument("-i", "--interactive", action = "store_true")
     args = parser.parse_args()
 
     # Additional args definition if debug_dir was specified
@@ -125,10 +127,16 @@ def main():
                                                                                 absolute_mode = False,
                                                                                 debug_dir = args.debug_dir,
                                                                                 use_punchhole = config["punchholes"],
-                                                                                punchhole_side = "left")
+                                                                                punchhole_side = "left",
+                                                                                create_json = args.interactive)
 
 
     print("{:>10}".format("OK"))
+
+    if args.interactive:
+        musicbox.server.run_server(shapes_dict, config["track_mappings"], center_x, center_y)
+        sys.exit()
+
 
     if args.tracks_file:
         print("Writing image of detected tracks to '", args.tracks_file, "'... ", sep = "", end = "")
@@ -137,7 +145,7 @@ def main():
 
     print("Calculating position of detected notes... ", end = "")
 
-    arr = musicbox.notes.convert.convert_notes(shapes_dict.values(), shapes_dict.keys(), center_x, center_y)
+    arr = musicbox.notes.convert.convert_notes(shapes_dict.values(), list(shapes_dict.keys()), center_x, center_y)
 
     arr = np.column_stack((arr, assignments[:,1]))
 
@@ -157,7 +165,7 @@ def main():
 
     print("Creating midi output and writing to '", args.output, "'... ", sep = "", end = "")
 
-    musicbox.notes.midi.create_midi(arr, config["track_mappings"], 144, args.output)
+    musicbox.notes.midi.create_midi(arr, config["track_mappings"], 144, args.output, 200)
 
     print("{:>10}".format("OK"))
 

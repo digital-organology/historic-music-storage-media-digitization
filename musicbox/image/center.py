@@ -1,6 +1,5 @@
 import math
 import cv2
-from shapely.geometry import Polygon
 import numpy as np
 
 def _getRadiusOutwards(src, axis, centre, length):

@@ -19,7 +19,7 @@ def _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat):
     # pitch = np.vectorize(tracks_to_notes.get)(data_array[:,0])
     return (start_time, duration, pitch)
 
-def create_midi(data_array, tracks_to_notes, beats, out_file):
+def create_midi(data_array, tracks_to_notes, beats, out_file, bpm):
     degrees_per_beat = 360 / beats
     start_time, duration, pitch = _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat)
     midi_obj = MIDIFile(numTracks=1,
@@ -32,7 +32,7 @@ def create_midi(data_array, tracks_to_notes, beats, out_file):
                 eventtime_is_ticks=False  # default
                 )
 
-    midi_obj.addTempo(0, 0, 130)
+    midi_obj.addTempo(0, 0, bpm)
 
     #for track_id in tpm.tracks_to_note.keys():
     #    midi_obj.addTempo(track_id, time=0, tempo=tpm.tempo)
