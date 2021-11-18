@@ -1,1 +1,1 @@
-__all__ = ["center", "canny", "label", "lut", "notes"]
+__all__ = ["center", "canny", "label", "lut", "notes", "preprocessing"]
