@@ -2,9 +2,7 @@ import numpy as np
 import cv2
 
 # This is the main processing class we use in our pipeline
-# It abstracts most complexity from the outside. Whenever different methods
-# are available it will use one explicitly set, the one set in the config or the default
-# in that order.
+# It abstracts most complexity from the outside.
 
 class processor(object):
 
@@ -15,6 +13,17 @@ class processor(object):
         self.data = data
         self.config = config
         return None
+
+    def validate_config(config):
+        """Validate that a config file has all required values
+
+        Args:
+            config (dict): Config to validate
+
+        Raises:
+            NotImplementedError: Not implemented yet
+        """
+        raise NotImplementedError
 
     @classmethod
     def from_array(cls, data_array: np.ndarray, config: dict):
@@ -60,4 +69,12 @@ class processor(object):
             raise ValueError("Image could not be read from provided path")
         return cls(img, config)
 
-    def run_pipeline()
+    def run_pipeline():
+        
+            a = kekse * 2
+        return None
+
+
+
+    def lol():
+
