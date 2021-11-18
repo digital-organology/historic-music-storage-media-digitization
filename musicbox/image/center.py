@@ -79,3 +79,25 @@ def alternative_center(outer_border_contour):
     cX = np.mean(outer_border_contour[:,0])
     cY = np.mean(outer_border_contour[:,1])
     return (int(cX), int(cY))
+
+def find_center(labels):
+    # indices = np.unique(labels)
+    # outer_border_id = indices[indices != 0].min()
+    indices, counts = np.unique(labels, return_counts = True)
+    indices = indices[1:]
+    counts = counts[1:]
+    max_count = np.argmax(counts)
+    outer_border_id = indices[max_count]
+    
+    # Transform it into a polygon
+
+    outer_border = np.argwhere(labels == outer_border_id).astype(np.int32)
+
+    # Switch x and y around
+    outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
+
+    # centroid = (sum(x) / len(outer_border), sum(y) / len(outer_border))
+    y,x = zip(*outer_border)
+    center_y, center_x = (max(x) + min(x))/2, (max(y) + min(y))/2
+
+    return center_y, center_x
