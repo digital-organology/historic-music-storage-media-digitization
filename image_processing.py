@@ -65,7 +65,7 @@ def main():
     print("Reading input image from '", args.input, "'... ", sep = "", end = "")
 
     # Read image in
-    # picture = cv2.imread("data/test_rotated.tiff", cv2.IMREAD_GRAYSCALE)
+    # picture = cv2.imread("data/test_images/hallo.JPG", cv2.IMREAD_GRAYSCALE)
     orig_picture = cv2.imread(args.input)
 
     if args.prepro:
@@ -111,6 +111,10 @@ def main():
         print("Writing image of detected shapes to '", args.shapes_file, "'... ", sep = "", end = "")
         cv2.imwrite(args.shapes_file, labels_image)
         print("{:>10}".format("OK"))
+
+    center_y, center_x = musicbox.image.center.find_center(labels)
+    center_y = int(center_y)
+    center_x = int(center_x)
 
     print("Segmenting disc into tracks... ", end = "")
 
@@ -174,3 +178,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    
+
+
+
+
+    
+
+
+
