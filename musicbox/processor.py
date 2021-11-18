@@ -60,4 +60,4 @@ class processor(object):
             raise ValueError("Image could not be read from provided path")
         return cls(img, config)
 
-    def
+    def run_pipeline()
