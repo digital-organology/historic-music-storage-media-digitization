@@ -2,6 +2,7 @@ ariston:
   type: pneumatic-plate # Thanks to Richard for this
   # Radius of the inner label, unit does not matter but has to match the one used for outer radius
   preprocessing: basic
+  center_method: mean
   inner_radius: 1.7
   # Radius of the entire disc
   outer_radius: 4.5

@@ -1,9 +1,7 @@
 from musicbox.helpers import gen_lut
 from musicbox.helpers import calculate_angles
-from musicbox.image.center import alternative_center
 import musicbox.image.label
 import numpy as np
-import math
 import os
 import sys
 from scipy.spatial import distance
@@ -12,6 +10,29 @@ from itertools import compress
 import cv2
 import json
 import alphashape
+from scipy.spatial import distance
+import cv2
+import numpy as np
+import math
+from musicbox.helpers import calculate_angles
+
+def convert_notes(shapes_dict, center_x, center_y):
+    shapes = shapes_dict.values()
+    shape_ids = list(shapes_dict.keys())
+    shape_min = []
+    shape_max = []
+    for shape in shapes:
+        mini, maxi = calculate_angles(shape, center_x, center_y)
+        shape_min.append(mini)
+        shape_max.append(maxi)
+    
+    # import pdb; pdb.set_trace()
+    arr = np.column_stack((list(shape_ids), shape_min, shape_max))
+    diff = arr[:,2] - arr[:,1]
+    # diff[diff > 200] = 360 - diff[diff > 200]
+    arr = np.c_[arr, diff]
+    return arr
+
 
 def _fix_empty_tracks(data_array, first_track, track_width):
     mean_dists = []
@@ -45,46 +66,16 @@ def _fix_empty_tracks(data_array, first_track, track_width):
 
 
 def extract_notes(img,
-         	        outer_radius,
-                    inner_radius,
                     center_x,
                     center_y,
-                    bwidth,
-                    first_track,
-                    track_width,
-                    img_grayscale,
-                    compat_mode = False,
-                    absolute_mode = False,
-                    debug_dir = None,
-                    use_punchhole = False,
-                    punchhole_side = "left",
+                    additional_arguments,
                     create_json = False):          
-    """Extract note positions from labeled image.
-    Keyword arguments:
-    img -- 2d Array of integers representing image with annotated connected components
-    outer_radius -- Radius of the outer border of the music disc, unit does not matter but needs to be the same as inner_radius
-    inner_radius -- Radius of the inner border (the area containing labels and such but no notes) of the music box disc
-    center_x -- Calculated x coordinate of the center of the disc
-    center_y -- Calculated y coordinate of the center of the disc
-    bwidth -- Bandwidth used with the meanshift algorithm
-    first_track -- Relative position of the innnermost track from center to outer border
-    track_width -- Average width of each track as relative distance between center and outer border
-    img_grayscale -- Grayscale version of the image provided as first argument
-    compat_mode -- If set to true will run an extra round of connected component detection with a high search distance to find the outer border of the disc
-    exact_mode -- Will employ some mitigations to calculate the positions of the notes correctly even when the detected components are partial
-    :Returns:
-        color_lut : opencv compatible color lookup table
-    """         
-    # img_grayscale is only needed when compat_mode is set to True.
-    # We will use it to run another pass detecting shapes with a high search area to find the outermost border
-
     # First of let us find the outer border
     # This should be the first found shape, meaning the one with the lowest index (apart from 0)
 
-    if compat_mode:
-        labels, labels_color = musicbox.image.label.label_image(img_grayscale, 1)
-    else:
-        labels = img.copy()
+    # import pdb; pdb.set_trace()
+
+    labels = img.copy()
 
     # indices = np.unique(labels)
     # outer_border_id = indices[indices != 0].min()
@@ -113,7 +104,7 @@ def extract_notes(img,
     # to the outer border. We can then calculate a approximate circular inner border.
 
     outer_radius_calc = distance.cdist([(center_x, center_y)], outer_border).min()
-    inner_radius_calc = outer_radius_calc / outer_radius * inner_radius
+    inner_radius_calc = outer_radius_calc / additional_arguments["outer_radius"] * additional_arguments["inner_radius"]
 
     # Create a circle, this could surely be done more efficient
 
@@ -142,12 +133,12 @@ def extract_notes(img,
     for shape_id in shape_ids:
         contour = np.argwhere(img == shape_id).astype(np.uint32)
         contour[:, [0, 1]] = contour[:, [1, 0]]
-        if use_punchhole:
+        if additional_arguments["use_punchholes"]:
             mini, maxi = calculate_angles(contour, center_x, center_y, return_points = True)
-            if punchhole_side == "left":
+            if additional_arguments["punchhole_side"] == "left":
                 #mini = np.array([mini[1], mini[0]])
                 centers.append(mini.astype(np.uint32))
-            elif punchhole_side == "right":
+            elif additional_arguments["punchhole_side"] == "right":
                 #maxi = np.array([maxi[1], maxi[0]])
                 centers.append(maxi.astype(np.uint32))
             else:
@@ -184,18 +175,12 @@ def extract_notes(img,
     for point in centers:
         pnt = [(point[0], point[1])]
         #pnt = [(point[1], point[0])]
-        if absolute_mode:
-            inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
-            outer_distance = distance.cdist(pnt, outer_border).min()
-            outer_distances.append(outer_distance)
-            inner_distances.append(inner_distance)
-        else:
-            # inner_distance = distance.cdist(pnt, inner_border).min()
-            inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
-            outer_distance = distance.cdist(pnt, outer_border).min()
-            sum_distance = outer_distance + inner_distance
-            outer_distances.append(outer_distance / sum_distance)
-            inner_distances.append(inner_distance / sum_distance)
+        # inner_distance = distance.cdist(pnt, inner_border).min()
+        inner_distance = distance.cdist(pnt, [(center_x, center_y)]).min()
+        outer_distance = distance.cdist(pnt, outer_border).min()
+        sum_distance = outer_distance + inner_distance
+        outer_distances.append(outer_distance / sum_distance)
+        inner_distances.append(inner_distance / sum_distance)
 
     # Now we may start clustering these points
 
@@ -203,7 +188,7 @@ def extract_notes(img,
     data = data * 1000
     data = np.column_stack((data, np.zeros(len(data))))
     data = data.astype(int)
-    ms = MeanShift(bandwidth = bwidth, bin_seeding = True)
+    ms = MeanShift(bandwidth = additional_arguments["bandwidth"], bin_seeding = True)
     ms.fit(data)
     classes = ms.labels_
     
@@ -233,7 +218,7 @@ def extract_notes(img,
 
     data_array = np.column_stack((shape_ids, classes, inner_distances))
 
-    assignments = _fix_empty_tracks(data_array, first_track, track_width)
+    assignments = _fix_empty_tracks(data_array, additional_arguments["first_track"], additional_arguments["track_width"])
 
     # Create colored output
 
@@ -270,7 +255,7 @@ def extract_notes(img,
 
     annotated_image = color_image.copy()
 
-    if debug_dir:
+    if "debug_dir" in additional_arguments.keys():
         for i in range(len(centers)):
             assigned_id = assignments[i, 1]#0 -> shape_id, 1 -> track_id
             point = centers[i]
@@ -283,13 +268,15 @@ def extract_notes(img,
                         (255, 255, 255),
                         2)
 
-        cv2.imwrite(os.path.join(debug_dir, "numbers_debug.tiff"), annotated_image)
+        cv2.imwrite(os.path.join(additional_arguments["debug_dir"], "numbers_debug.tiff"), annotated_image)
 
 
         # import pdb; pdb.set_trace()
 
         debug_array = np.column_stack((shape_ids, classes, assignments[:,1], inner_distances))
-        np.savetxt(os.path.join(debug_dir, "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
+        np.savetxt(os.path.join(additional_arguments["debug_dir"], "debug.txt"), debug_array, delimiter = ",", fmt= "%1.5f")
+
+        cv2.imwrite(os.path.join(additional_arguments["debug_dir"], "tracks.tiff"), color_image)
 
     if create_json:
         print(sys.path[0])

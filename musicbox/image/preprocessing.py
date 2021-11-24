@@ -36,8 +36,8 @@ def preprocess(method: str, img: np.ndarray, additional_parameters = dict()):
     return None
 
 def preprocess_basic(img, additional_parameters):
-    img_grayscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, img_threshold = cv2.threshold(img_grayscale, 60, 255, cv2.THRESH_BINARY)
+    # img_grayscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, img_threshold = cv2.threshold(img, 60, 255, cv2.THRESH_BINARY)
     img_out = (img_threshold > 0).astype(int)
     return img_out
 
