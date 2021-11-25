@@ -34,6 +34,8 @@ def create_midi(data_array, additional_arguments):
 
     midi_obj.addTempo(0, 0, additional_arguments["bpm"])
 
+    midi_obj.addTimeSignature(0, 0, 4, 4, 24)
+
     #for track_id in tpm.tracks_to_note.keys():
     #    midi_obj.addTempo(track_id, time=0, tempo=tpm.tempo)
 
