@@ -19,8 +19,8 @@ def _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat, additio
 
     # pitch = np.vectorize(tracks_to_notes.get)(data_array[:,0])
     if "debug_dir" in additional_arguments.keys():
-        arr = np.array((start_time, duration, pitch)).T
-        np.savetxt(os.path.join(additional_arguments["debug_dir"], "music_data.csv"), arr, delimiter = ",", header = "start, duration, midi_tone", comments = "")
+        arr = np.array((start_time, duration, pitch, data_array[:,4])).T
+        np.savetxt(os.path.join(additional_arguments["debug_dir"], "music_data.csv"), arr, delimiter = ",", header = "start, duration, midi_tone, shape_id", comments = "")
     # import pdb; pdb.set_trace()
     return (start_time, duration, pitch)
 
