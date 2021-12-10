@@ -1,9 +1,10 @@
 from midiutil.MidiFile import MIDIFile
 import numpy as np
+import os
 
-def _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat):
-    start_time = (360 - data_array[:,2]) / degrees_per_beat
-    duration = data_array[:,3] / degrees_per_beat
+def _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat, additional_arguments):
+    start_time = (360 - data_array[:,2])# / degrees_per_beat
+    duration = data_array[:,3]# / degrees_per_beat
 
     pitch = data_array[:,0]
     keys = np.array(list(tracks_to_notes.keys()))
@@ -17,11 +18,15 @@ def _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat):
     pitch = vs[np.searchsorted(ks, pitch)]
 
     # pitch = np.vectorize(tracks_to_notes.get)(data_array[:,0])
+    if "debug_dir" in additional_arguments.keys():
+        arr = np.array((start_time, duration, pitch)).T
+        np.savetxt(os.path.join(additional_arguments["debug_dir"], "music_data.csv"), arr, delimiter = ",", header = "start, duration, midi_tone", comments = "")
+    # import pdb; pdb.set_trace()
     return (start_time, duration, pitch)
 
-def create_midi(data_array, tracks_to_notes, beats, out_file, bpm):
-    degrees_per_beat = 360 / beats
-    start_time, duration, pitch = _convert_track_degree(data_array, tracks_to_notes, degrees_per_beat)
+def create_midi(data_array, additional_arguments):
+    degrees_per_beat = 360 / additional_arguments["bars"]
+    start_time, duration, pitch = _convert_track_degree(data_array, additional_arguments["track_mappings"], degrees_per_beat, additional_arguments)
     midi_obj = MIDIFile(numTracks=1,
                 removeDuplicates=False,  # set True?
                 deinterleave=True,  # default
@@ -32,7 +37,9 @@ def create_midi(data_array, tracks_to_notes, beats, out_file, bpm):
                 eventtime_is_ticks=False  # default
                 )
 
-    midi_obj.addTempo(0, 0, bpm)
+    midi_obj.addTempo(0, 0, additional_arguments["bpm"])
+
+    midi_obj.addTimeSignature(0, 0, 4, 4, 24)
 
     #for track_id in tpm.tracks_to_note.keys():
     #    midi_obj.addTempo(track_id, time=0, tempo=tpm.tempo)
@@ -47,5 +54,5 @@ def create_midi(data_array, tracks_to_notes, beats, out_file, bpm):
                          duration = duration[i],
                          volume = volume)
 
-    with open(out_file, "wb") as output_file:
+    with open(additional_arguments["filename"], "wb") as output_file:
         midi_obj.writeFile(output_file)

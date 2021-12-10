@@ -2,6 +2,98 @@ import cv2
 import numpy as np
 from skimage import measure
 from musicbox.helpers import gen_lut
+import os
+
+
+def label(method: str, img: np.ndarray, additional_parameters = dict()):
+    """Main method for image labeling will dispatch the desired method
+
+    Args:
+        method (str): Method to use for labeling, currently 2-connected (via scikit-image) and n_distance (custom implementation) are available
+        img (numpy.ndarray): Image to label, needs to be binarized or at least have its background be 0
+        additional_parameters (dict, optional): Dictionary of optional arguments. Defaults to dict().
+
+    Raises:
+        TypeError: Raised if invalid input data is provided
+        ValueError: Raised if an invalid method for labeling is given
+
+    Returns:
+        numpy.ndarray: Image with labeled components
+    """
+
+    # Basic parameter checking
+    if not isinstance(method, str):
+        raise TypeError("method is not a string, aborting")
+    
+    # See if we got a valid parameter
+    available_methods = ["2-connected", "n-distance"]
+    if not any(method in s for s in available_methods):
+        raise ValueError("Method " + method + " is not implemented")
+
+    # Call apropiate method
+    if method == "2-connected":
+        return label_2_connected(img, additional_parameters)
+    if method == "n-distance":
+        return label_n_distance(img, additional_parameters)
+
+    return None
+
+def label_2_connected(img, additional_parameters):
+    img = measure.label(img, background = 0, connectivity = 2)
+
+
+    if "debug_dir" in additional_parameters:
+        # Get color table
+        lut = gen_lut()
+
+        # Make sure there are at max 256 labels
+        labels = img.copy().astype(np.uint8)
+        labels = cv2.LUT(cv2.merge((labels, labels, labels)), lut)
+
+        cv2.imwrite(os.path.join(additional_parameters["debug_dir"], "labels.png"), labels)
+
+    return img
+        
+
+def label_n_distance(img, additional_parameters):
+
+    if not "distance" in additional_parameters:
+        distance = 5
+    else:
+        distance = additional_parameters.distance
+
+    # Make sure every pixel either is marked as background or foreground
+    img = img > 0
+
+    img = img.astype(int)
+
+
+    # Multiply everything by -1 so that unprocessed pixels will be -1 while background is still 0
+    img = img * -1
+
+    y_limit = img.shape[0]
+    x_limit = img.shape[1]
+
+    # Iterate over every pixel once (does this make us yolo?)
+
+    current_shape = 1
+
+    for x_next in range(0, x_limit - 1):
+        # print("Processing x:", x_next)
+        for y_next in range(0, y_limit - 1):
+            # print("Processing y:", y_next)
+            current_shape = _process_pixel(img, y_next, x_next, distance, y_limit, x_limit, current_shape)
+
+
+    if "debug_dir" in additional_parameters:
+        # Get color table
+        lut = gen_lut()
+
+        # Make sure there are at max 256 labels
+        labels = img.copy().astype(np.uint8)
+        labels = cv2.LUT(cv2.merge((labels, labels, labels)), lut)
+
+        cv2.imwrite(os.path.join(additional_parameters["debug_dir"], "labels.png"), labels)
 
 def _find_connected_shapes(img, y, x, distance, y_limit, x_limit):
     # Define search area
@@ -57,46 +149,3 @@ def _process_pixel(img, y, x, distance, y_limit, x_limit, current_shape):
         img[img == shape] = oldest_shape
 
     return current_shape
-
-def label_image(img, distance):
-    """
-    Will label all connected components of the provided image.
-    There may be gaps in label ids due to specifics of the implementation.
-
-    :Returns:
-        labels : A 2d numpy array of the connected components 
-        colored_image : A rgb colored representation of the same
-    """        
-
-    # Make sure every pixel either is marked as background or foreground
-    img = img > 0
-
-    img = img.astype(int)
-
-    if distance == 1:
-        img = measure.label(img, background = 0, connectivity = 2)
-    else:
-        # Multiply everything by -1 so that unprocessed pixels will be -1 while background is still 0
-        img = img * -1
-
-        y_limit = img.shape[0]
-        x_limit = img.shape[1]
-
-        # Iterate over every pixel once (does this make us yolo?)
-
-        current_shape = 1
-
-        for x_next in range(0, x_limit - 1):
-            # print("Processing x:", x_next)
-            for y_next in range(0, y_limit - 1):
-                # print("Processing y:", y_next)
-                current_shape = _process_pixel(img, y_next, x_next, distance, y_limit, x_limit, current_shape)
-
-
-    # Get color table
-    lut = gen_lut()
-
-    # Make sure there are at max 256 labels
-    labels = img.copy().astype(np.uint8)
-    labels = cv2.LUT(cv2.merge((labels, labels, labels)), lut)
-    return img, labels
