@@ -1,6 +1,5 @@
 from musicbox.helpers import gen_lut
 from musicbox.helpers import calculate_angles
-import musicbox.image.label
 import numpy as np
 import os
 import sys
@@ -13,8 +12,9 @@ import alphashape
 from scipy.spatial import distance
 import cv2
 import numpy as np
-import math
 from musicbox.helpers import calculate_angles
+
+from numpy import genfromtxt
 
 def convert_notes(shapes_dict, center_x, center_y):
     shapes = shapes_dict.values()
@@ -256,8 +256,11 @@ def extract_notes(img,
     annotated_image = color_image.copy()
 
     if "debug_dir" in additional_arguments.keys():
+        # If you want to look at clustering results:
+        # cluster_data = genfromtxt("dataaar.csv", delimiter = ",")
         for i in range(len(centers)):
             assigned_id = assignments[i, 1]#0 -> shape_id, 1 -> track_id
+            # assigned_id = cluster_data[i, 1]#0 -> shape_id, 1 -> track_id
             point = centers[i]
             point = (point[0], point[1])
             cv2.putText(annotated_image,
