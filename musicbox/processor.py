@@ -11,7 +11,6 @@ import musicbox.notes.midi
 # It abstracts most complexity from the outside.
 
 class Processor(object):
-
     data = None
     config = None
     labels = None
