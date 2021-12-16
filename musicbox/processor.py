@@ -1,6 +1,8 @@
 import numpy as np
 import cv2
 import os
+import yaml
+from pathlib import Path
 import musicbox.image.label
 import musicbox.image.preprocessing
 import musicbox.image.center
@@ -12,37 +14,34 @@ import musicbox.notes.midi
 
 class Processor(object):
     data = None
-    config = None
+    pipeline = None
+    parameters = None
     labels = None
     center_x = None
     center_y = None
+    verbose = None
     debug_dir = ""
 
-    def __init__(self, data, config, debug_dir = False):
+    def __init__(self, data, config, debug_dir = False, verbose = False):
         self.data = data
-        self.config = config
+        if not {"pipeline", "config"} <= config.keys():
+            raise ValueError("config provided is invalid")
+        self.parameters = config["config"]
+        self.pipeline = config["pipeline"]
+        self.parsed_config = None
         self.debug_dir = debug_dir
+        self.verbose = verbose
         return None
 
-    def validate_config(config):
-        """Validate that a config file has all required values
-
-        Args:
-            config (dict): Config to validate
-
-        Raises:
-            NotImplementedError: Not implemented yet
-        """
-        raise NotImplementedError
-
     @classmethod
-    def from_array(cls, data_array: np.ndarray, config: dict, debug_dir = ""):
+    def from_array(cls, data_array: np.ndarray, config: dict, debug_dir = "", verbose = False):
         """Creates a new processor class from an image given as a numpy array
 
         Args:
             data_array (np.ndarray): The image to be processed
             config (dict): Config data for the image to be processed (as read from an config file)
             debug (str, optional): Directory to put debug files in. Empty string to not generate debug files. Defaults to "".
+            verbose (bool): Should the current status be output to the standard console
 
         Raises:
             TypeError: If either argument is of a bad type this will be raised  
@@ -56,16 +55,17 @@ class Processor(object):
             raise TypeError("config must be a dictionary")
         if debug_dir != "" and not os.path.exists(debug_dir):
             os.mkdir(debug_dir)
-        return cls(data_array, config, debug_dir)
+        return cls(data_array, config, debug_dir, verbose)
 
     @classmethod
-    def from_file(cls, path: str, config: dict, debug_dir = ""):
+    def from_file(cls, path: str, config: dict, debug_dir = "", verbose = False):
         """Create a new processor class from an image file on disk
 
         Args:
             path (str): Path to the image file
             config (dict): Config data for the image to be processed (as read from an config file)
             debug (str, optional): Directory to put debug files in. Empty string to not generate debug files. Defaults to "".
+            verbose (bool): Should the current status be output to the standard console
 
         Raises:
             TypeError: If either argument is of a bad type this will be raised
@@ -84,7 +84,80 @@ class Processor(object):
             raise ValueError("Image could not be read from provided path")
         if debug_dir != "" and not os.path.exists(debug_dir):
             os.mkdir(debug_dir)
-        return cls(img, config, debug_dir)
+        return cls(img, config, debug_dir, verbose)
+
+    def process(self):
+        """Executes the given pipeline for this processor
+        """        
+
+    def prepare_pipeline(self):
+        p_config_path = os.path.join(Path(__file__).parent.absolute(), "processor_config.yaml")
+        with open(p_config_path, "r") as stream:
+            try:
+                p_config = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                raise ValueError("Error occured while reading processor_config.yaml file. Original error: " + exc)
+
+        method_config = p_config["methods"]
+
+        if self.verbose:
+            print("Validating and preparing pipeline...")
+
+        # Add debug dir to parameters if we have it
+
+        params = dict()
+
+        if self.debug_dir != "":
+            params["debug_dir"] = self.debug_dir
+
+        # Validate each pipeline step and add required parametersdddddddddddddd to the dictd
+
+        available_data = []
+        is_runnable = True
+        errors = []
+        warnings = []
+
+        for pipeline_step in self.pipeline:
+            step_config = method_config[pipeline_step]
+
+            # Check if we have all the date required for this 
+            if not set(step_config["requires"]) <= set(available_data):
+                missing_steps = ", ".join(set(step_config["requires"]) - set(available_data))
+                errors.append("Pipeline step '" + pipeline_step + "' requires components '" + missing_steps + "' to be computed but the given pipeline does not provide them")
+                is_runnable = False
+
+            if not set(step_config["suggests"]) <= set(available_data):
+                missing_steps = ", ".join(set(step_config["suggests"]) - set(available_data))
+                warnings.append("Pipeline step '" + pipeline_step + "' suggests components '" + missing_steps + "' to be computed but the given pipeline does not provide them")
+
+            available_data.extend(step_config["provides"])
+
+            for parameter in step_config["parameters"]:
+                if not parameter in self.parameters.keys():
+                    errors.append("Pipeline step '" + pipeline_step + "' requires parameter '" + parameter + "' to be set but it is missing in the config file")
+                    is_runnable = False
+
+                params[parameter] = self.parameters[parameter]
+
+        if not is_runnable:
+            print("Could not configure pipeline. The following errors occured:")
+            print(*errors, sep = "\n")
+            return False
+
+
+        if warnings:
+            print("The following warnings occured:")
+            print(*warnings, sep = "\n")
+
+        self.parsed_config = params
+        return True
+
+    def build_parameters(self):
+
+
+    def execute_pipeline(self):
+
+    
 
     def run_pipeline(self):
 
