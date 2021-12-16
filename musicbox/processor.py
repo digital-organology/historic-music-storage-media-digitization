@@ -127,7 +127,18 @@ class Processor(object):
         self.data = musicbox.image.preprocessing.preprocess(self.config["preprocessing"], self.data, additional_arguments)
 
     def run_center_detection(self, additional_arguments = dict()):
-        (y, x) = musicbox.image.center.detect_center(self.config["center_method"], self.data, additional_arguments)
+        # Temporary, will be refactored if used permanently:
+        if self.config["center_method"] == "iterative":
+            additional_arguments["inner_radius"] = self.config["inner_radius"]
+            additional_arguments["outer_radius"] = self.config["outer_radius"]
+            additional_arguments["bandwidth"] = self.config["bandwidth"]
+            additional_arguments["track_width"] = self.config["track_width"]
+            additional_arguments["first_track"] = self.config["first_track"]
+            additional_arguments["use_punchholes"] = self.config["use_punchholes"] if "use_punchholes" in self.config.keys() else False 
+            additional_arguments["punchhole_side"] = self.config["punchhole_side"] if "punchhole_side" in self.config.keys() else False 
+            (y, x) = musicbox.image.center.detect_center(self.config["center_method"], self.labels, additional_arguments)
+        else:
+            (y, x) = musicbox.image.center.detect_center(self.config["center_method"], self.data, additional_arguments)
         self.center_x = round(x)
         self.center_y = round(y)
 
@@ -160,5 +171,5 @@ class Processor(object):
         additional_arguments["track_mappings"] = self.config["track_mappings"]
         additional_arguments["bars"] = 144
         additional_arguments["filename"] = "ProcessorOutput.mid"
-        additional_arguments["bpm"] = 200
+        additional_arguments["bpm"] = 300
         musicbox.notes.midi.create_midi(self.data_array, additional_arguments)

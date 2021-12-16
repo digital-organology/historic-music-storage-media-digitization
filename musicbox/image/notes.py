@@ -13,6 +13,7 @@ from scipy.spatial import distance
 import cv2
 import numpy as np
 from musicbox.helpers import calculate_angles
+from sklearn.cluster import KMeans
 
 from numpy import genfromtxt
 
@@ -188,9 +189,33 @@ def extract_notes(img,
     data = data * 1000
     data = np.column_stack((data, np.zeros(len(data))))
     data = data.astype(int)
+
+    # Test kMeans here
+
+    # kmeans = KMeans(n_clusters = 24)
+    # kmeans.fit(data)
+    # classes = kmeans.labels_
+    # import pdb; pdb.set_trace()
+
+
     ms = MeanShift(bandwidth = additional_arguments["bandwidth"], bin_seeding = True)
     ms.fit(data)
     classes = ms.labels_
+
+    # Debug data
+    clust_centers = ms.cluster_centers_.copy()
+    # import pdb; pdb.set_trace()
+    clust_centers.sort(axis = 0)
+    differences = clust_centers[:,0]
+    differences = np.diff(differences)
+    differences = np.insert(differences, 0, 0.0)
+    debug_array = np.column_stack((clust_centers[:,0], differences))
+    # import pdb; pdb.set_trace()
+    if "debug_dir" in additional_arguments.keys():
+        np.savetxt(os.path.join(additional_arguments["debug_dir"], "cluster_centers.cvs"), debug_array, delimiter = ",")
+
+    if "iterative_center" in additional_arguments.keys():
+        return debug_array
     
     # We now go ahead and sort the clusters in ascending order beginning on the inside
 
