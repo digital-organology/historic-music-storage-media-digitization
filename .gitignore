@@ -8,3 +8,9 @@ output/*
 .vscode/
 __pycache__/
 *.mid
+
+*.JPG
+*.csv
+*.png
+*.txt
+*.mp3
