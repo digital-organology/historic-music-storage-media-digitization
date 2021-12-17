@@ -22,6 +22,21 @@ def gen_lut():
         b = np.concatenate([np.packbits(tobits(x, -1)) for x in arr])
         return np.concatenate([[[b]], [[g]], [[r]]]).T
 
+def make_image_from_shapes(canvas, shapes):
+    bg_image = np.zeros_like(canvas).astype(np.uint16)
+
+    for id, shape in shapes.items():
+        bg_image[shape[:,0], shape[:,1]] = id
+    return bg_image
+
+def make_color_image(img):
+    lut = gen_lut()
+
+    color_image = img.astype(np.uint8)
+    color_image = cv2.LUT(cv2.merge((color_image, color_image, color_image)), lut)
+
+    return color_image
+
 def plot_polygon(pic, polygon):
     bg_image = np.zeros_like(pic).astype(np.uint8)
     bg_image[polygon[:,1], polygon[:,0]] = 1

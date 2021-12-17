@@ -4,6 +4,19 @@ import os
 from skimage import measure
 from musicbox.helpers import gen_lut
 
+## Extract shapes
+
+def extract_shapes(proc):
+    # This is muuuch faster than what we did previously, but there may be even faster ways
+    # some more information might be found here: https://stackoverflow.com/q/30003068/3176892
+    shapes = [np.argwhere(i == proc.labels) for i in np.unique(proc.labels)]
+    proc.shapes = dict(zip(np.unique(proc.labels), shapes))
+
+    # We could most likely get away with just deleting the first element (as it should always be 0)
+    proc.shapes.pop(0, None)
+
+    return True
+
 ## Center
 
 def center_mean(proc):
@@ -17,12 +30,9 @@ def center_mean(proc):
 
     outer_border = np.argwhere(proc.labels == outer_border_id).astype(np.int32)
 
-    # Switch x and y around
-    outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
-
     # centroid = (sum(x) / len(outer_border), sum(y) / len(outer_border))
     y,x = zip(*outer_border)
-    center_y, center_x = (max(x) + min(x))/2, (max(y) + min(y))/2
+    center_x, center_y = (max(x) + min(x))/2, (max(y) + min(y))/2
 
     proc.center_y = round(center_y)
     proc.center_x = round(center_x)

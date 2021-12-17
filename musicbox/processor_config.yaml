@@ -20,9 +20,67 @@ methods:
       - binarization
     parameters:
       - label_distance
-  image.note_extraction:
+  image.extract_shapes:
     requires:
       - labels
+    provides:
+      - shapes
+    suggests: []
+    parameters: []
+  shapes.find_edges:
+    requires:
+      - shapes
+      - center
+    provides:
+      - disc_edge
+      - label_edge
+    suggests: []
+    parameters:
+      - inner_radius
+      - outer_radius
+  shapes.filter_inner:
+    requires:
+      - shapes
+      - center
+      - disc_edge
+      - label_edge
+    provides: []
+    suggests: []
+    parameters: 
+      - inner_radius
+      - outer_radius
+  shapes.filter_size:
+    requires:
+      - shapes
+    provides: []
+    suggests: []
+    parameters: []
+  tracks.mean_shift:
+    requires:
+      - shapes
+      - center
+      - disc_edge
+      - label_edge
+    provides:
+      - tracks
+    suggests: []
+    parameters:
+      - bandwidth
+  tracks.fix_empty:
+    requires:
+      - tracks
+      - center
+      - disc_edge
+      - label_edge
+    provides: []
+    suggests: []
+    parameters:
+      - track_width
+      - first_track
+      - n_tracks
+  image.note_extraction:
+    requires:
+      - shapes
       - center
     provides:
       - notes

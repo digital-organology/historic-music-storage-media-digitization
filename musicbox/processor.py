@@ -3,23 +3,31 @@ import cv2
 import os
 import yaml
 import sys
+import timeit
 from pathlib import Path
 # We could dynamically import these with __import__ or importlib if we want to
 import musicbox.image
 import musicbox.preprocessing
 import musicbox.notes
+import musicbox.shapes
+import musicbox.tracks
 
 # This is the main processing class
 
 class Processor(object):
 
     # These attributes hold data required for the actual data processing
+    # We do not actually need to declare them here as they can be added dynamically
+    # but we do this to create a better overview of what exists
     original_image = None
     current_image = None
     notes_data = None
     labels = None
+    shapes = None
     center_x = None
     center_y = None
+    disc_edge = None
+    label_edge = None
 
     # These are configuration variables
     pipeline = None
@@ -94,10 +102,6 @@ class Processor(object):
             os.mkdir(debug_dir)
         return cls(img, config, debug_dir, verbose)
 
-    def process(self):
-        """Executes the given pipeline for this processor
-        """        
-
     def prepare_pipeline(self):
         p_config_path = os.path.join(Path(__file__).parent.absolute(), "processor_config.yaml")
         with open(p_config_path, "r") as stream:
@@ -159,7 +163,7 @@ class Processor(object):
             print(*warnings, sep = "\n")
 
         if self.verbose:
-            print("Pipeline checked and parameters collected successfully")
+            print("Pipeline checked and executable")
 
         return True
 
@@ -167,10 +171,14 @@ class Processor(object):
         for step in self.pipeline:
             if self.verbose:
                 print("Executing pipeline step '" + step + "'...")
+                start_time = timeit.default_timer()
 
             if not self.execute_method(step):
                 print("Error when executing pipeline step '" + step + "'. Giving up.")
                 return False
+
+            if self.verbose:
+                print("Step finished in " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
 
         return True
 
@@ -196,6 +204,8 @@ class Processor(object):
     def run(self):
         if not self.prepare_pipeline():
             print("Error when configuring pipeline, giving up.")
+            return False
 
         if not self.execute_pipeline():
             print("Error when executing pipeline, giving up.")
+            return False
