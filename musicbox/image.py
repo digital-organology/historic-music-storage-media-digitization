@@ -1,72 +1,61 @@
-import cv2
 import numpy as np
+import cv2
+import os
 from skimage import measure
 from musicbox.helpers import gen_lut
-import os
 
+## Center
 
-def label(method: str, img: np.ndarray, additional_parameters = dict()):
-    """Main method for image labeling will dispatch the desired method
-
-    Args:
-        method (str): Method to use for labeling, currently 2-connected (via scikit-image) and n_distance (custom implementation) are available
-        img (numpy.ndarray): Image to label, needs to be binarized or at least have its background be 0
-        additional_parameters (dict, optional): Dictionary of optional arguments. Defaults to dict().
-
-    Raises:
-        TypeError: Raised if invalid input data is provided
-        ValueError: Raised if an invalid method for labeling is given
-
-    Returns:
-        numpy.ndarray: Image with labeled components
-    """
-
-    # Basic parameter checking
-    if not isinstance(method, str):
-        raise TypeError("method is not a string, aborting")
+def center_mean(proc):
+    indices, counts = np.unique(proc.labels, return_counts = True)
+    indices = indices[1:]
+    counts = counts[1:]
+    max_count = np.argmax(counts)
+    outer_border_id = indices[max_count]
     
-    # See if we got a valid parameter
-    available_methods = ["2-connected", "n-distance"]
-    if not any(method in s for s in available_methods):
-        raise ValueError("Method " + method + " is not implemented")
+    # Transform it into a polygon
 
-    # Call apropiate method
-    if method == "2-connected":
-        return label_2_connected(img, additional_parameters)
-    if method == "n-distance":
-        return label_n_distance(img, additional_parameters)
+    outer_border = np.argwhere(proc.labels == outer_border_id).astype(np.int32)
 
-    return None
+    # Switch x and y around
+    outer_border[:,[0, 1]] = outer_border[:, [1, 0]]
 
-def label_2_connected(img, additional_parameters):
-    img = measure.label(img, background = 0, connectivity = 2)
+    # centroid = (sum(x) / len(outer_border), sum(y) / len(outer_border))
+    y,x = zip(*outer_border)
+    center_y, center_x = (max(x) + min(x))/2, (max(y) + min(y))/2
 
+    proc.center_y = round(center_y)
+    proc.center_x = round(center_x)
 
-    if "debug_dir" in additional_parameters:
+## Labeling method
+
+def labeling(proc):
+    if proc.parameters["label_distance"] != 1:
+        _legacy_label(proc)
+        return True
+
+    labels = measure.label(proc.current_image, background = 0, connectivity = 2)
+
+    proc.labels = labels
+
+    if "debug_dir" in proc.parameters.keys():
         # Get color table
         lut = gen_lut()
 
         # Make sure there are at max 256 labels
-        labels = img.copy().astype(np.uint8)
-        labels = cv2.LUT(cv2.merge((labels, labels, labels)), lut)
+        color_image = labels.copy().astype(np.uint8)
+        color_image = cv2.LUT(cv2.merge((color_image, color_image, color_image)), lut)
 
-        cv2.imwrite(os.path.join(additional_parameters["debug_dir"], "labels.png"), labels)
+        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "labels.png"), color_image)
 
-    return img
-        
+    return True
 
-def label_n_distance(img, additional_parameters):
+def _legacy_label(proc):
 
-    if not "distance" in additional_parameters:
-        distance = 5
-    else:
-        distance = additional_parameters.distance
+    distance = proc.parameters["label_distance"]
 
     # Make sure every pixel either is marked as background or foreground
-    img = img > 0
-
-    img = img.astype(int)
-
+    img = (proc.current_image > 0).astype(int)
 
     # Multiply everything by -1 so that unprocessed pixels will be -1 while background is still 0
     img = img * -1
@@ -85,7 +74,7 @@ def label_n_distance(img, additional_parameters):
             current_shape = _process_pixel(img, y_next, x_next, distance, y_limit, x_limit, current_shape)
 
 
-    if "debug_dir" in additional_parameters:
+    if "debug_dir" in proc.parameters.keys():
         # Get color table
         lut = gen_lut()
 
@@ -93,7 +82,10 @@ def label_n_distance(img, additional_parameters):
         labels = img.copy().astype(np.uint8)
         labels = cv2.LUT(cv2.merge((labels, labels, labels)), lut)
 
-        cv2.imwrite(os.path.join(additional_parameters["debug_dir"], "labels.png"), labels)
+        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "labels.png"), labels)
+
+    proc.labels = img
+    return True
 
 def _find_connected_shapes(img, y, x, distance, y_limit, x_limit):
     # Define search area
@@ -149,3 +141,6 @@ def _process_pixel(img, y, x, distance, y_limit, x_limit, current_shape):
         img[img == shape] = oldest_shape
 
     return current_shape
+
+def note_extraction(proc):
+    print("Hi from the note_extraction method!")

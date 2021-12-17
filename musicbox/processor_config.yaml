@@ -1,0 +1,45 @@
+methods:
+  preprocessing.binarization:
+    requires: []
+    provides:
+      - binarization
+    suggests: []
+    parameters: []
+  image.center_mean:
+    requires: []
+    provides:
+      - center
+    suggests:
+      - binarization
+    parameters: []
+  image.labeling:
+    requires: []
+    provides:
+      - labels
+    suggests:
+      - binarization
+    parameters:
+      - label_distance
+  image.note_extraction:
+    requires:
+      - labels
+      - center
+    provides:
+      - notes
+    suggests: []
+    parameters:
+      - inner_radius
+      - outer_radius
+      - track_width
+      - first_track
+      - n_tracks
+  notes.create_midi:
+    requires:
+      - notes
+    provides:
+      - midi
+    suggests: []
+    parameters:
+      - track_mappings
+
+  
