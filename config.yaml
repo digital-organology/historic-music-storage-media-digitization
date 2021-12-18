@@ -1,6 +1,7 @@
 ariston:
   pipeline:
     - preprocessing.binarization
+    - preprocessing.edge_in
     - image.labeling
     - image.center_mean
     - image.extract_shapes
