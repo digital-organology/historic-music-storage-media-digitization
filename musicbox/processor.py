@@ -31,6 +31,8 @@ class Processor(object):
     label_edge = None
     note_data = None
     midi_filename = None
+    assignments = None
+    track_distances = None
 
     # These are configuration variables
     pipeline = None
