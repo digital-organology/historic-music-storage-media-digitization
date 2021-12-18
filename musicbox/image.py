@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import os
+import timeit
 from skimage import measure
 from musicbox.helpers import gen_lut
 
@@ -49,6 +50,8 @@ def labeling(proc):
     proc.labels = labels
 
     if "debug_dir" in proc.parameters.keys():
+        start_time = timeit.default_timer()
+
         # Get color table
         lut = gen_lut()
 
@@ -57,6 +60,9 @@ def labeling(proc):
         color_image = cv2.LUT(cv2.merge((color_image, color_image, color_image)), lut)
 
         cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "labels.png"), color_image)
+
+        print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
+
 
     return True
 
@@ -85,6 +91,8 @@ def _legacy_label(proc):
 
 
     if "debug_dir" in proc.parameters.keys():
+        start_time = timeit.default_timer()
+
         # Get color table
         lut = gen_lut()
 
@@ -93,6 +101,8 @@ def _legacy_label(proc):
         labels = cv2.LUT(cv2.merge((labels, labels, labels)), lut)
 
         cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "labels.png"), labels)
+        print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
+
 
     proc.labels = img
     return True

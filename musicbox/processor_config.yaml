@@ -5,6 +5,13 @@ methods:
       - binarization
     suggests: []
     parameters: []
+  preprocessing.edge_in:
+    requires:
+      - binarization
+    provides:
+      - edges
+    suggests: []
+    parameters: []
   image.center_mean:
     requires: []
     provides:
@@ -13,7 +20,8 @@ methods:
       - binarization
     parameters: []
   image.labeling:
-    requires: []
+    requires:
+      - edges
     provides:
       - labels
     suggests:
