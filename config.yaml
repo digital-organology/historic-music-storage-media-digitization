@@ -11,6 +11,7 @@ ariston:
     - tracks.correct_empty
     - notes.create_notes
     - notes.create_midi
+    - analysis.detect_key
   config:
     label_distance: 1
     inner_radius: 1.7

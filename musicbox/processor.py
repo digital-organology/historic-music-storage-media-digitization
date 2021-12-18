@@ -11,6 +11,7 @@ import musicbox.preprocessing
 import musicbox.notes
 import musicbox.shapes
 import musicbox.tracks
+import musicbox.analysis
 
 # This is the main processing class
 

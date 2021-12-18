@@ -103,5 +103,12 @@ methods:
     parameters:
       - track_mappings
       - bpm
+  analysis.detect_key:
+    requires:
+      - midi
+    provides:
+      - key
+    suggests: []
+    parameters: []
 
   
