@@ -65,5 +65,6 @@ A function called `crop_image` that is located in `preprocessing.py` should be c
 
 Your method will receive one argument which is a reference to the `processor` instance that invoked it.
 It may read any information it needs from that instance and write data that is supposed to be available to other methods to it (take care not to overwrite anything, best check what is defined to None in the class and add your slots).
+Your method should return `True` if everything went okay and `False` elsewise, though we might drop that requirement in the future.
 
 After this is done, you can include your method in a pipeline in `config.yaml`.
