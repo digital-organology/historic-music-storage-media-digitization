@@ -1,0 +1,107 @@
+methods:
+  preprocessing.binarization:
+    requires: []
+    provides:
+      - binarization
+    suggests: []
+    parameters: []
+  preprocessing.edge_in:
+    requires:
+      - binarization
+    provides:
+      - edges
+    suggests: []
+    parameters: []
+  image.center_mean:
+    requires: []
+    provides:
+      - center
+    suggests:
+      - binarization
+    parameters: []
+  image.labeling:
+    requires:
+      - edges
+    provides:
+      - labels
+    suggests:
+      - binarization
+    parameters:
+      - label_distance
+  image.extract_shapes:
+    requires:
+      - labels
+    provides:
+      - shapes
+    suggests: []
+    parameters: []
+  shapes.find_disc_edges:
+    requires:
+      - shapes
+      - center
+    provides:
+      - disc_edge
+      - label_edge
+    suggests: []
+    parameters:
+      - inner_radius
+      - outer_radius
+  shapes.filter_inner:
+    requires:
+      - shapes
+      - center
+      - disc_edge
+      - label_edge
+    provides: []
+    suggests: []
+    parameters: 
+      - inner_radius
+      - outer_radius
+  shapes.filter_size:
+    requires:
+      - shapes
+    provides: []
+    suggests: []
+    parameters: []
+  tracks.mean_shift:
+    requires:
+      - shapes
+      - center
+      - disc_edge
+      - label_edge
+    provides:
+      - tracks
+    suggests: []
+    parameters:
+      - bandwidth
+  tracks.correct_empty:
+    requires:
+      - tracks
+      - center
+      - disc_edge
+      - label_edge
+    provides: []
+    suggests: []
+    parameters:
+      - track_width
+      - first_track
+      - n_tracks
+  notes.create_notes:
+    requires:
+      - tracks
+      - center
+    provides:
+      - notes
+    suggests: []
+    parameters: []
+  notes.create_midi:
+    requires:
+      - notes
+    provides:
+      - midi
+    suggests: []
+    parameters:
+      - track_mappings
+      - bpm
+
+  

@@ -1,48 +1,65 @@
 import numpy as np
 import cv2
 import os
-import musicbox.image.label
-import musicbox.image.preprocessing
-import musicbox.image.center
-import musicbox.image.notes
-import musicbox.notes.midi
+import yaml
+import sys
+import timeit
+from pathlib import Path
+# We could dynamically import these with __import__ or importlib if we want to
+import musicbox.image
+import musicbox.preprocessing
+import musicbox.notes
+import musicbox.shapes
+import musicbox.tracks
 
-# This is the main processing class we use in our pipeline
-# It abstracts most complexity from the outside.
+# This is the main processing class
 
 class Processor(object):
-    data = None
-    config = None
+
+    # These attributes hold data required for the actual data processing
+    # We do not actually need to declare them here as they can be added dynamically
+    # but we do this to create a better overview of what exists
+    original_image = None
+    current_image = None
+    notes_data = None
     labels = None
+    shapes = None
     center_x = None
     center_y = None
+    disc_edge = None
+    label_edge = None
+    note_data = None
+    midi_filename = None
+
+    # These are configuration variables
+    pipeline = None
+    parameters = None
+    verbose = False
     debug_dir = ""
 
-    def __init__(self, data, config, debug_dir = False):
-        self.data = data
-        self.config = config
+    def __init__(self, data, config, debug_dir = "", verbose = False):
+        self.original_image = data.copy()
+        self.current_image = data.copy()
+        if not {"pipeline", "config"} <= config.keys():
+            raise ValueError("config provided is invalid")
+        self.parameters = config["config"]
+        if not debug_dir == "":
+            self.parameters["debug_dir"] = debug_dir
+        self.pipeline = config["pipeline"]
+        self.parsed_config = None
         self.debug_dir = debug_dir
+        self.verbose = verbose
         return None
 
-    def validate_config(config):
-        """Validate that a config file has all required values
-
-        Args:
-            config (dict): Config to validate
-
-        Raises:
-            NotImplementedError: Not implemented yet
-        """
-        raise NotImplementedError
-
     @classmethod
-    def from_array(cls, data_array: np.ndarray, config: dict, debug_dir = ""):
+    def from_array(cls, data_array: np.ndarray, config: dict, debug_dir = "", verbose = False):
         """Creates a new processor class from an image given as a numpy array
 
         Args:
             data_array (np.ndarray): The image to be processed
             config (dict): Config data for the image to be processed (as read from an config file)
             debug (str, optional): Directory to put debug files in. Empty string to not generate debug files. Defaults to "".
+            verbose (bool): Should the current status be output to the standard console
 
         Raises:
             TypeError: If either argument is of a bad type this will be raised  
@@ -56,16 +73,17 @@ class Processor(object):
             raise TypeError("config must be a dictionary")
         if debug_dir != "" and not os.path.exists(debug_dir):
             os.mkdir(debug_dir)
-        return cls(data_array, config, debug_dir)
+        return cls(data_array, config, debug_dir, verbose)
 
     @classmethod
-    def from_file(cls, path: str, config: dict, debug_dir = ""):
+    def from_file(cls, path: str, config: dict, debug_dir = "", verbose = False):
         """Create a new processor class from an image file on disk
 
         Args:
             path (str): Path to the image file
             config (dict): Config data for the image to be processed (as read from an config file)
             debug (str, optional): Directory to put debug files in. Empty string to not generate debug files. Defaults to "".
+            verbose (bool): Should the current status be output to the standard console
 
         Raises:
             TypeError: If either argument is of a bad type this will be raised
@@ -84,81 +102,112 @@ class Processor(object):
             raise ValueError("Image could not be read from provided path")
         if debug_dir != "" and not os.path.exists(debug_dir):
             os.mkdir(debug_dir)
-        return cls(img, config, debug_dir)
+        return cls(img, config, debug_dir, verbose)
 
-    def run_pipeline(self):
+    def prepare_pipeline(self):
+        p_config_path = os.path.join(Path(__file__).parent.absolute(), "processor_config.yaml")
+        with open(p_config_path, "r") as stream:
+            try:
+                p_config = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                raise ValueError("Error occured while reading processor_config.yaml file. Original error: " + exc)
 
-        # First of we create our base addition arguments dictionary to store arguments used for multiple
-        # functions later on like the debugging directory
+        method_config = p_config["methods"]
 
-        additional_arguments_base = dict()
+        if self.verbose:
+            print("Validating and preparing pipeline...")
+
+        # Add debug dir to parameters if we have it
+
+        params = dict()
 
         if self.debug_dir != "":
-            additional_arguments_base["debug_dir"] = self.debug_dir
+            params["debug_dir"] = self.debug_dir
 
-        # Preprocessing:
-        self.run_preprocessing(additional_arguments_base.copy())
+        # Validate each pipeline step and add required parameters to the dictd
 
-        # Labeling:
-        self.run_labeling(additional_arguments_base.copy())
+        available_data = []
+        is_runnable = True
+        errors = []
+        warnings = []
 
-        # Center detection
-        self.run_center_detection(additional_arguments_base.copy())
+        for pipeline_step in self.pipeline:
+            if not pipeline_step in method_config.keys():
+                warnings.append("Could not find config for pipeline step '" + pipeline_step + "'. Will continue but no pipeline validation or parameter detection will be available. Make sure to add an entry to 'processor_config.yaml'.")
+                continue
 
-        # Assign Tracks and extract notes
-        self.run_note_extraction(additional_arguments_base.copy())
+            step_config = method_config[pipeline_step]
 
-        self.create_midi(additional_arguments_base.copy())
+            # Check if we have all the date required for this 
+            if not set(step_config["requires"]) <= set(available_data):
+                missing_steps = ", ".join(set(step_config["requires"]) - set(available_data))
+                errors.append("Pipeline step '" + pipeline_step + "' requires components '" + missing_steps + "' to be computed but the given pipeline does not provide them")
+                is_runnable = False
 
-        return None
+            if not set(step_config["suggests"]) <= set(available_data):
+                missing_steps = ", ".join(set(step_config["suggests"]) - set(available_data))
+                warnings.append("Pipeline step '" + pipeline_step + "' suggests components '" + missing_steps + "' to be computed but the given pipeline does not provide them")
 
-    def run_labeling(self, additional_arguments = dict()):
-       
-        if self.config["search_distance"] == 1:
-            method = "2-connected"
-        else:
-            method = "n-distance"
-            additional_arguments["distance"] = self.config["search_distance"]
+            available_data.extend(step_config["provides"])
 
-        self.labels = musicbox.image.label.label(method, self.data, additional_arguments)
+            for parameter in step_config["parameters"]:
+                if not parameter in self.parameters.keys():
+                    errors.append("Pipeline step '" + pipeline_step + "' requires parameter '" + parameter + "' to be set but it is missing in the config file")
+                    is_runnable = False
 
+        if not is_runnable:
+            print("Could not configure pipeline. The following errors occured:")
+            print(*errors, sep = "\n")
+            return False
 
-    def run_preprocessing(self, additional_arguments = dict()):
-        self.data = musicbox.image.preprocessing.preprocess(self.config["preprocessing"], self.data, additional_arguments)
+        if warnings:
+            print("The following warnings occured:")
+            print(*warnings, sep = "\n")
 
-    def run_center_detection(self, additional_arguments = dict()):
-        (y, x) = musicbox.image.center.detect_center(self.config["center_method"], self.data, additional_arguments)
-        self.center_x = round(x)
-        self.center_y = round(y)
+        if self.verbose:
+            print("Pipeline checked and executable")
 
+        return True
 
-    def run_note_extraction(self, additional_arguments = dict()):
-        additional_arguments["inner_radius"] = self.config["inner_radius"]
-        additional_arguments["outer_radius"] = self.config["outer_radius"]
-        additional_arguments["bandwidth"] = self.config["bandwidth"]
-        additional_arguments["track_width"] = self.config["track_width"]
-        additional_arguments["first_track"] = self.config["first_track"]
-        additional_arguments["use_punchholes"] = self.config["use_punchholes"] if "use_punchholes" in self.config.keys() else False 
-        additional_arguments["punchhole_side"] = self.config["punchhole_side"] if "punchhole_side" in self.config.keys() else False 
+    def execute_pipeline(self):
+        for step in self.pipeline:
+            if self.verbose:
+                print("Executing pipeline step '" + step + "'...")
+                start_time = timeit.default_timer()
 
-        shapes_dict, assignments, color_image = musicbox.image.notes.extract_notes(self.labels, self.center_x, self.center_y, additional_arguments, False)
+            if not self.execute_method(step):
+                print("Error when executing pipeline step '" + step + "'. Giving up.")
+                return False
 
-        arr = musicbox.image.notes.convert_notes(shapes_dict, self.center_x, self.center_y)
+            if self.verbose:
+                print("OK, took " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds to finish")
 
-        arr = np.column_stack((arr, assignments[:,1]))
+        return True
 
-        per = [4, 1, 2, 3, 0]
-        arr[:] = arr[:,per]
+    def execute_method(self, method):
+        (module, method) = method.split(".", 1)
+        module_name = "musicbox." + module
+        module = sys.modules.get(module_name)
 
-        too_high = arr[:, 0] <= self.config["n_tracks"]
+        if module is None:
+            print("Error: Could not find module '" + module_name + "'. Aborting.")
+            return False
 
-        arr = arr[too_high, :]
+        if not hasattr(module, method):
+            print("Error: Module '" + module_name + "' does not contain method '" + method + "'. Aborting.")
+            return False
 
-        self.data_array = arr
-    
-    def create_midi(self, additional_arguments = dict()):
-        additional_arguments["track_mappings"] = self.config["track_mappings"]
-        additional_arguments["bars"] = 144
-        additional_arguments["filename"] = "ProcessorOutput.mid"
-        additional_arguments["bpm"] = 200
-        musicbox.notes.midi.create_midi(self.data_array, additional_arguments)
+        method_to_call = getattr(module, method)
+
+        method_to_call(self)
+
+        return True
+
+    def run(self):
+        if not self.prepare_pipeline():
+            print("Error when configuring pipeline, giving up.")
+            return False
+
+        if not self.execute_pipeline():
+            print("Error when executing pipeline, giving up.")
+            return False

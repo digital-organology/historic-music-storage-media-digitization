@@ -1,53 +1,16 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import math
 from scipy.spatial import distance
+from datetime import datetime
 
-def gen_lut():
-        """
-        Generate a label colormap compatible with opencv lookup table, based on
-        Rick Szelski algorithm in `Computer Vision: Algorithms and Applications`,
-        appendix C2 `Pseudocolor Generation`.
-        :Returns:
-            color_lut : opencv compatible color lookup table
-        """
+def _calculate_angles(shape, center_x, center_y, return_points = False):
+    # This is most likely pretty inefficient
 
-        # Blatantly stolen from here: https://stackoverflow.com/a/57080906/3176892
+    # As numpy stores things as y,x pairs we need to switch the coordinates around
+    # to make sense for opencv
 
-        tobits = lambda x, o: np.array(list(np.binary_repr(x, 24)[o::-3]), np.uint8)
-        arr = np.arange(256)
-        r = np.concatenate([np.packbits(tobits(x, -3)) for x in arr])
-        g = np.concatenate([np.packbits(tobits(x, -2)) for x in arr])
-        b = np.concatenate([np.packbits(tobits(x, -1)) for x in arr])
-        return np.concatenate([[[b]], [[g]], [[r]]]).T
-
-def make_image_from_shapes(canvas, shapes):
-    if isinstance(shapes, dict):
-        shapes = zip(shapes.keys(), shapes.values())
-
-    bg_image = np.zeros_like(canvas).astype(np.uint16)
-
-    for id, shape in shapes:
-        bg_image[shape[:,0], shape[:,1]] = id
-    return bg_image
-
-def make_color_image(img):
-    lut = gen_lut()
-
-    color_image = img.astype(np.uint8)
-    color_image = cv2.LUT(cv2.merge((color_image, color_image, color_image)), lut)
-
-    return color_image
-
-def plot_polygon(pic, polygon):
-    bg_image = np.zeros_like(pic).astype(np.uint8)
-    bg_image[polygon[:,1], polygon[:,0]] = 1
-    plt.imshow(bg_image)
-    plt.show()
-
-def calculate_angles(shape, center_x, center_y, return_points = False):
-    # shape[:,[0, 1]] = shape[:, [1, 0]]
+    shape[:,[0, 1]] = shape[:, [1, 0]]
     rectangle = cv2.minAreaRect(shape.astype(np.float32))
     box = cv2.boxPoints(rectangle)
     box = box.astype(np.uint32)
@@ -56,6 +19,8 @@ def calculate_angles(shape, center_x, center_y, return_points = False):
         print(len(box))
         return (0, 0)
 
+    # Scipy spatial on the other hand does expect things to be y,x
+    # but if we give both coordinates in the wrong order it _should_ be fine
     dists = distance.cdist(box, [[center_x, center_y]])
 
     dists = dists.reshape(-1)
@@ -152,3 +117,84 @@ def calculate_angles(shape, center_x, center_y, return_points = False):
             return (second_m, first_m)
         else:
             return (degs_second, degs_first)
+
+def create_notes(proc):
+    shapes = proc.shapes.values()
+    shape_ids = list(proc.shapes.keys())
+    shape_min = []
+    shape_max = []
+    for shape in shapes:
+        mini, maxi = _calculate_angles(shape, proc.center_x, proc.center_y)
+        shape_min.append(mini)
+        shape_max.append(maxi)
+    
+    arr = np.column_stack((list(shape_ids), shape_min, shape_max))
+    diff = arr[:,2] - arr[:,1]
+    # diff[diff > 200] = 360 - diff[diff > 200]
+    arr = np.c_[arr, diff]
+
+    proc.note_data = arr
+    return True
+
+from midiutil.MidiFile import MIDIFile
+import numpy as np
+import os
+
+def _convert_track_degree(data_array, tracks_to_notes, debug_dir = ""):
+    start_time = (360 - data_array[:,2])
+    duration = data_array[:,3]
+
+    pitch = data_array[:,0]
+    keys = np.array(list(tracks_to_notes.keys()))
+    values = np.array(list(tracks_to_notes.values()))
+
+    sidx = keys.argsort()
+
+    ks = keys[sidx]
+    vs = values[sidx]
+
+    pitch = vs[np.searchsorted(ks, pitch)]
+
+    # pitch = np.vectorize(tracks_to_notes.get)(data_array[:,0])
+    if "debug_dir" != "":
+        arr = np.array((start_time, duration, pitch, data_array[:,4])).T
+        np.savetxt(os.path.join(debug_dir, "music_data.csv"), arr, delimiter = ",", header = "start, duration, midi_tone, shape_id", comments = "")
+    # import pdb; pdb.set_trace()
+    return (start_time, duration, pitch)
+
+def create_midi(proc):
+    data_array = np.c_[list(proc.assignments.values()), proc.note_data]
+    start_time, duration, pitch = _convert_track_degree(data_array, proc.parameters["track_mappings"], proc.parameters["debug_dir"] if "debug_dir" in proc.parameters.keys() else "")
+    midi_obj = MIDIFile(numTracks=1,
+                removeDuplicates=False,  # set True?
+                deinterleave=True,  # default
+                adjust_origin=False,
+                # default - if true find earliest event in all tracts and shift events so that time is 0
+                file_format=1,  # default - set tempo track separately
+                ticks_per_quarternote=480,  # 120, 240, 384, 480, and 960 are common values
+                eventtime_is_ticks=False  # default
+                )
+
+    midi_obj.addTempo(0, 0, proc.parameters["bpm"])
+
+    midi_obj.addTimeSignature(0, 0, 4, 4, 24)
+
+    #for track_id in tpm.tracks_to_note.keys():
+    #    midi_obj.addTempo(track_id, time=0, tempo=tpm.tempo)
+
+    channel = 0 # we do not have multiple instruments
+    volume = 100
+    for i, _ in enumerate(start_time):
+        midi_obj.addNote(track = 0,
+                         channel = channel,
+                         pitch = pitch[i],
+                         time = start_time[i],
+                         duration = duration[i],
+                         volume = volume)
+
+    filename = "output_" + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + ".mid"
+
+    proc.midi_filename = filename
+
+    with open(filename, "wb") as output_file:
+        midi_obj.writeFile(output_file)
