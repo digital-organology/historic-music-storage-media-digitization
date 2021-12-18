@@ -1,11 +1,12 @@
 # Music box disc digitization
 
 This repository contains code to automatically generate a midi file out of a high resolution image of discs for old music boxes.
+The pipeline is highly modular and is to be extended to include processing of other formats of historic music storage media and additional analytic features.
 This is an in-progress project at the Digital Organology group of the Museum of Musical Instruments at Leipzig University.
 
 ## Prerequisites
 
-A working installation of python 3 (may also work with python 2, we did not test that) is required.
+A working installation of python 3 (will most likely not work with python 2, we did not test that) is required.
 Additionally the packages in `requirements.txt` need to be installed.
 This can be done using PIP:
 
@@ -19,28 +20,47 @@ Currently the script is developed using backlit images of round music box discs 
 
 ![example_disc](./images/example.JPG)
 
-Depending on the way these images are taken some preprocessing might be required.
-We currently decrease the brightness and increase the contrast.
-This can be done using ImageMagick:
-
-```{bash}
-convert image.JPG -brightness-contrast -60x40 image_out.JPG
-```
-
-The script might also work with non-backlit pictures (and was in fact using these in the beginning of development) though some parameter tuning (see `config.yaml`) might be required and results may be of lesser quality.
+Depending on the way your images are taken there might be additional preprocessing required, images similar to the one above should work out of the box.
 
 ## Usage
 
-The main script can be run on the console via
+Pipelines are configured in the `config.yaml` file.
+An example pipeline to process a disc for the ariston brand of music box' is included.
 
-```{bash}
-python image_processing.py [input_image] [output_file]
+The software can be accesed either directly in python our through our wrapper script.
+
+### Python usage
+
+We expose the `processor` class. It can be used to process a file. An example can be seen in our wrapper file:
+
+```{python}
+with open(args.config, "r") as stream:
+    config = yaml.safe_load(stream)
+
+config = config["ariston"]
+
+disc_processor = musicbox.processor.Processor.from_file("image_of_an_ariston_disc.JPG", config, debug_dir = "put_debug_files_here", verbose = True)
+
+disc_processor.run()
 ```
 
-There are a number of parameters:
+### Wrapper script
 
-* `-h` Outputs information about parameters
-* `-s` Specifies where an image of the detected connected components will be written to if desired
-* `-t` The same as above but for the output of the track detection algorithm
-* `-c` Path to the config file, may be omitted if the file is called `config.yaml`
-* `-d` The type of the disc, used for selecting a configuration preset
+Alternatively, use the `process.py` wrapper:
+
+```{bash}
+python process.py -d "put_debug_files_here" -v -t ariston image_of_an_ariston_disc.JPG
+```
+
+All available arguments can be seen with the `--help` switch.
+
+## Contributing
+
+Adding new pipeline components is done by adding your method to the `processor_config.yaml`.
+Take an example of the existing methods to manage what your component needs and provides.
+Note that your method is not limited to accessing or storing the information provided there, this information is only used to validate if the pipeline is runnable.
+
+Your methods name is specified by where it lives and the function name itself.
+A function called `crop_image` that is located in `preprocessing.py` should be called `preprocessing.crop_image` to be found by the dispatcher.
+
+After this is done, you can include your method in a pipeline in `config.yaml`.
