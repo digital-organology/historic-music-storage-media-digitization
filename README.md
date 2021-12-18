@@ -63,4 +63,7 @@ Note that your method is not limited to accessing or storing the information pro
 Your methods name is specified by where it lives and the function name itself.
 A function called `crop_image` that is located in `preprocessing.py` should be called `preprocessing.crop_image` to be found by the dispatcher.
 
+Your method will receive one argument which is a reference to the `processor` instance that invoked it.
+It may read any information it needs from that instance and write data that is supposed to be available to other methods to it (take care not to overwrite anything, best check what is defined to None in the class and add your slots).
+
 After this is done, you can include your method in a pipeline in `config.yaml`.

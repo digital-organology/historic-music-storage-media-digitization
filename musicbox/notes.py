@@ -196,5 +196,8 @@ def create_midi(proc):
 
     proc.midi_filename = filename
 
+    if proc.verbose:
+        print("INFO: Writing midi file to '" + filename + "'...")
+
     with open(filename, "wb") as output_file:
         midi_obj.writeFile(output_file)
