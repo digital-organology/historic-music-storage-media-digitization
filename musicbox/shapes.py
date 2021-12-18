@@ -6,7 +6,7 @@ import musicbox.helpers
 import timeit
 import os
 
-def find_edges(proc):
+def find_disc_edges(proc):
     # We need to know what area the label is. The config gives us
     # the relative distance between label and center in relation to the
     # distance between center and disc edge.

@@ -28,6 +28,8 @@ class Processor(object):
     center_y = None
     disc_edge = None
     label_edge = None
+    note_data = None
+    midi_filename = None
 
     # These are configuration variables
     pipeline = None
@@ -178,7 +180,7 @@ class Processor(object):
                 return False
 
             if self.verbose:
-                print("Step finished in " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
+                print("OK, took " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds to finish")
 
         return True
 

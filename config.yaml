@@ -4,20 +4,22 @@ ariston:
     - image.labeling
     - image.center_mean
     - image.extract_shapes
-    - shapes.find_edges
+    - shapes.find_disc_edges
     - shapes.filter_inner
     - tracks.mean_shift
-    - image.note_extraction
+    - tracks.correct_empty
+    - notes.create_notes
     - notes.create_midi
   config:
     label_distance: 1
     inner_radius: 1.7
     outer_radius: 4.5
     # Average width of each track as relative distance between center and outer border
-    track_width: 0.02267693
+    track_width: 0.024 # Original value: 0.02267693
     first_track: 0.42
     n_tracks: 24
     bandwidth: 8
+    bpm: 350 # Not actually bpm as we don't even know what a beat is...
     track_mappings:
       1: 45
       2: 47
@@ -44,34 +46,6 @@ ariston:
       23: 85
       24: 86
 
-      
-    type: pneumatic-plate # Thanks to Richard for this
-    # Radius of the inner label, unit does not matter but has to match the one used for outer radius
-    preprocessing: basic
-    center_method: iterative
-    
-    # Radius of the entire disc
-    
-    # Number of beats the disc has
-    number_beats: 144
-    # Bandwidth used for meanshift clustering the tracks
-    # How far to look around each pixel when finding connected components in the image
-
-    # Relative position of the innnermost track from center to outer border
-    
-    # Total number of tracks on the disc
-    
-    # Low threshold for canny algorithm
-    canny_low: 100
-    # High threshold
-    canny_high: 255
-    # Preprocessing parameters
-    thresh_binary: 245
-    erosion_kernel: 3
-    noise_kernel: 5
-    brightness: 100
-    # Mappings of tracks to midi codes
-    
 
 # Old format, needs to be converted as needed:
 

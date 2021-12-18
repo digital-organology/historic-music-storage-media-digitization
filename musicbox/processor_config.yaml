@@ -27,7 +27,7 @@ methods:
       - shapes
     suggests: []
     parameters: []
-  shapes.find_edges:
+  shapes.find_disc_edges:
     requires:
       - shapes
       - center
@@ -66,7 +66,7 @@ methods:
     suggests: []
     parameters:
       - bandwidth
-  tracks.fix_empty:
+  tracks.correct_empty:
     requires:
       - tracks
       - center
@@ -78,19 +78,14 @@ methods:
       - track_width
       - first_track
       - n_tracks
-  image.note_extraction:
+  notes.create_notes:
     requires:
-      - shapes
+      - tracks
       - center
     provides:
       - notes
     suggests: []
-    parameters:
-      - inner_radius
-      - outer_radius
-      - track_width
-      - first_track
-      - n_tracks
+    parameters: []
   notes.create_midi:
     requires:
       - notes
@@ -99,5 +94,6 @@ methods:
     suggests: []
     parameters:
       - track_mappings
+      - bpm
 
   

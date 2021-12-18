@@ -151,6 +151,3 @@ def _process_pixel(img, y, x, distance, y_limit, x_limit, current_shape):
         img[img == shape] = oldest_shape
 
     return current_shape
-
-def note_extraction(proc):
-    print("Hi from the note_extraction method!")

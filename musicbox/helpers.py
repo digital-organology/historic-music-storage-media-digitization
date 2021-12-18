@@ -23,9 +23,12 @@ def gen_lut():
         return np.concatenate([[[b]], [[g]], [[r]]]).T
 
 def make_image_from_shapes(canvas, shapes):
+    if isinstance(shapes, dict):
+        shapes = zip(shapes.keys(), shapes.values())
+
     bg_image = np.zeros_like(canvas).astype(np.uint16)
 
-    for id, shape in shapes.items():
+    for id, shape in shapes:
         bg_image[shape[:,0], shape[:,1]] = id
     return bg_image
 
