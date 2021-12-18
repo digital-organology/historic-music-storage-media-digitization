@@ -19,6 +19,15 @@ methods:
     suggests:
       - binarization
     parameters: []
+  image.center_iterative:
+    requires:
+      - center
+    provides:
+      - center
+    suggests: []
+    parameters:
+      - angle
+      - iterations
   image.labeling:
     requires:
       - edges

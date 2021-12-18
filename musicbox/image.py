@@ -2,8 +2,64 @@ import numpy as np
 import cv2
 import os
 import timeit
+import math
 from skimage import measure
 from musicbox.helpers import gen_lut
+
+## Center iterative
+
+def center_iterative(proc):
+    scores = []
+    coords = []
+    candidates = _get_candidate_points(proc)
+    for candidate in candidates:
+        candidate_x, candidate_y = candidate
+        score = _score_iteration(proc, candidate_x, candidate_y)
+        scores.append(score)
+        coords.append((candidate_x, candidate_y))
+
+    max_idx = min(enumerate(scores), key = lambda x: x[1])[0]
+
+    best_x, best_y = coords[max_idx]
+
+    if proc.verbose:
+        print("INFO: Best center found is (" + str(best_x) + ", " + str(best_y) + ")")
+
+    proc.center_x = best_x
+    proc.center_y = best_y
+
+    return True
+
+def _get_candidate_points(proc):
+    if proc.verbose:
+        print("INFO: Testing " + str(proc.parameters["iterations"]) + " poins with an angle of " + str(proc.parameters["angle"]) + "...")
+
+    pos = []
+    base_angle = proc.parameters["angle"]
+    for i in range(0, proc.parameters["iterations"]):
+        angle = base_angle * i
+        x_next = round(proc.center_x + (1 + 1 * angle) * math.cos(0.1 * angle))
+        y_next = round(proc.center_y + (1 + 1 * angle) * math.sin(0.1 * angle))
+        pos.append((x_next, y_next))
+    return pos
+
+def _score_iteration(proc, candidate_x, candidate_y):
+    # We adjust the center on the processor and run the track detection
+    proc.center_x = candidate_x
+    proc.center_y = candidate_y
+    proc.execute_method("tracks.mean_shift")
+
+    # Get the track distances
+
+    data = np.diff(proc.track_distances, n = 1, axis = 0)
+
+    if "debug_dir" in proc.parameters.keys():
+        with open(os.path.join(proc.parameters["debug_dir"], "stat_values_iterative.csv"), "a+") as f:
+            f.write(str(candidate_x) + ", " + str(candidate_y) + ", " + str(np.std(data[:,1])) + ", " + str(np.mean(data[:,1])) + "\n")
+
+    return np.std(data[:,1])
+
+
 
 ## Extract shapes
 
