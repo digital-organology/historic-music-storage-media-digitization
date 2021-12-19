@@ -33,6 +33,7 @@ class Processor(object):
     midi_filename = None
     assignments = None
     track_distances = None
+    beat_length = None
 
     # These are configuration variables
     pipeline = None

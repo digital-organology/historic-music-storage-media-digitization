@@ -1,8 +1,37 @@
 import numpy as np
 import cv2
 import math
+import timeit
+import os
+import matplotlib.pyplot as plt
 from scipy.spatial import distance
 from datetime import datetime
+from sklearn.cluster import KMeans
+from midiutil.MidiFile import MIDIFile
+
+def find_beat_length(proc):
+    note_length = proc.note_data[:,3]
+    note_length = np.column_stack((note_length, np.zeros(len(note_length))))
+
+    fit = KMeans(4)
+    fit.fit(note_length)
+
+    if "debug_dir" in proc.parameters:
+        start_time = timeit.default_timer()
+
+        plt.scatter(note_length[:,0], note_length[:,1], c = fit.labels_)
+        plt.savefig(os.path.join(proc.parameters["debug_dir"], "clustering_beat_length.tiff"))
+        
+        print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
+
+    # Our assumption here is that the smallest cluster is 1/8 notes, the second smallest thus beeing 1/4 notes
+    # So whatever the length of one of those is, is the conversion factor degree/beats
+
+    proc.beat_length = np.sort(fit.cluster_centers_[:,0])[1]
+
+    return True
+    
+
 
 def _calculate_angles(shape, center_x, center_y, return_points = False):
     # This is most likely pretty inefficient
@@ -136,13 +165,13 @@ def create_notes(proc):
     proc.note_data = arr
     return True
 
-from midiutil.MidiFile import MIDIFile
-import numpy as np
-import os
-
-def _convert_track_degree(data_array, tracks_to_notes, debug_dir = ""):
+def _convert_track_degree(data_array, tracks_to_notes, proc, debug_dir = ""):
     start_time = (360 - data_array[:,2])
     duration = data_array[:,3]
+
+    if hasattr(proc, "beat_length") and proc.beat_length is not None:
+        start_time = start_time / proc.beat_length
+        duration = duration / proc.beat_length
 
     pitch = data_array[:,0]
     keys = np.array(list(tracks_to_notes.keys()))
@@ -164,7 +193,7 @@ def _convert_track_degree(data_array, tracks_to_notes, debug_dir = ""):
 
 def create_midi(proc):
     data_array = np.c_[list(proc.assignments.values()), proc.note_data]
-    start_time, duration, pitch = _convert_track_degree(data_array, proc.parameters["track_mappings"], proc.parameters["debug_dir"] if "debug_dir" in proc.parameters.keys() else "")
+    start_time, duration, pitch = _convert_track_degree(data_array, proc.parameters["track_mappings"], proc, proc.parameters["debug_dir"] if "debug_dir" in proc.parameters.keys() else "")
     midi_obj = MIDIFile(numTracks=1,
                 removeDuplicates=False,  # set True?
                 deinterleave=True,  # default
@@ -177,7 +206,7 @@ def create_midi(proc):
 
     midi_obj.addTempo(0, 0, proc.parameters["bpm"])
 
-    midi_obj.addTimeSignature(0, 0, 4, 4, 24)
+    midi_obj.addTimeSignature(0, 0, 4, 2, 24)
 
     #for track_id in tpm.tracks_to_note.keys():
     #    midi_obj.addTempo(track_id, time=0, tempo=tpm.tempo)

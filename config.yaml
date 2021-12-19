@@ -62,6 +62,7 @@ ariston:
     - tracks.mean_shift
     - tracks.correct_empty
     - notes.create_notes
+    - notes.find_beat_length
     - notes.create_midi
     - analysis.detect_key
   config:
@@ -73,7 +74,7 @@ ariston:
     first_track: 0.42
     n_tracks: 24
     bandwidth: 8
-    bpm: 350 # Not actually bpm as we don't even know what a beat is...
+    bpm: 120 # Not actually bpm as we don't even know what a beat is...
     track_mappings:
       1: 45
       2: 47

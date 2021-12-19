@@ -103,12 +103,20 @@ methods:
       - notes
     suggests: []
     parameters: []
+  notes.find_beat_length:
+    requires:
+      - notes
+    provides:
+      - beat_length
+    suggests: []
+    parameters: []
   notes.create_midi:
     requires:
       - notes
     provides:
       - midi
-    suggests: []
+    suggests:
+      - beat_length
     parameters:
       - track_mappings
       - bpm
