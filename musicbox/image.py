@@ -47,7 +47,17 @@ def _score_iteration(proc, candidate_x, candidate_y):
     # We adjust the center on the processor and run the track detection
     proc.center_x = candidate_x
     proc.center_y = candidate_y
+    
+    # This prevents the mean_shift method to create debug information each time it is called
+    # which accounts for > 50% of its runtime
+
+    if "debug_dir" in proc.parameters:
+        debug_dir = proc.parameters.pop("debug_dir")
+
     proc.execute_method("tracks.mean_shift")
+
+    if "debug_dir" in proc.parameters:
+        proc.parameters["debug_dir"] = debug_dir
 
     # Get the track distances
 

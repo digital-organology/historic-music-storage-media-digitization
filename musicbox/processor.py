@@ -179,7 +179,13 @@ class Processor(object):
                 print("Executing pipeline step '" + step + "'...")
                 start_time = timeit.default_timer()
 
-            if not self.execute_method(step):
+            success = self.execute_method(step)
+
+            if success is None:
+                print("Warning: Step '" + step + "' finished with an unknown status. Took " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds to finish")
+                continue
+
+            if not success:
                 print("Error when executing pipeline step '" + step + "'. Giving up.")
                 return False
 

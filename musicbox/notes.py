@@ -167,7 +167,9 @@ def create_notes(proc):
 
 def _convert_track_degree(data_array, tracks_to_notes, proc, debug_dir = ""):
     start_time = (360 - data_array[:,2])
-    duration = data_array[:,3]
+    duration = data_array[:,4]
+
+    # import pdb; pdb.set_trace()
 
     if hasattr(proc, "beat_length") and proc.beat_length is not None:
         start_time = start_time / proc.beat_length
