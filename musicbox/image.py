@@ -4,16 +4,25 @@ import os
 import timeit
 import math
 from skimage import measure
-from musicbox.helpers import gen_lut
+from musicbox.helpers import gen_lut, make_color_image
 
 ## Center iterative
 
 def center_iterative(proc):
+    # Create a debug image
+    if "debug_dir" in proc.parameters:
+        debug_image = proc.labels.copy()
+        debug_image = make_color_image(debug_image)
+        debug_image = cv2.circle(debug_image, (proc.center_x, proc.center_y), 2, (255, 255, 0), 2)
+
     scores = []
     coords = []
     candidates = _get_candidate_points(proc)
     for candidate in candidates:
         candidate_x, candidate_y = candidate
+        if "debug_dir" in proc.parameters:
+            debug_image = cv2.circle(debug_image, (candidate_x, candidate_y), 2, (255, 0, 0), 2)
+
         score = _score_iteration(proc, candidate_x, candidate_y)
         scores.append(score)
         coords.append((candidate_x, candidate_y))
@@ -23,7 +32,11 @@ def center_iterative(proc):
     best_x, best_y = coords[max_idx]
 
     if proc.verbose:
-        print("INFO: Best center found is (" + str(best_x) + ", " + str(best_y) + ")")
+        print("INFO: Best center found is (" + str(best_y) + ", " + str(best_x) + ")")
+
+    if "debug_dir" in proc.parameters:
+        debug_image = cv2.circle(debug_image, (best_x, best_y), 2, (0, 0, 255), 2)
+        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "spiral.tiff"), debug_image)
 
     proc.center_x = best_x
     proc.center_y = best_y
@@ -32,14 +45,14 @@ def center_iterative(proc):
 
 def _get_candidate_points(proc):
     if proc.verbose:
-        print("INFO: Testing " + str(proc.parameters["iterations"]) + " poins with an angle of " + str(proc.parameters["angle"]) + "...")
+        print("INFO: Testing " + str(proc.parameters["iterations"]) + " poins with an angle of " + str(proc.parameters["angle"] * 10) + " degrees...")
 
     pos = []
     base_angle = proc.parameters["angle"]
     for i in range(0, proc.parameters["iterations"]):
         angle = base_angle * i
-        x_next = round(proc.center_x + (1 + 1 * angle) * math.cos(0.1 * angle))
-        y_next = round(proc.center_y + (1 + 1 * angle) * math.sin(0.1 * angle))
+        x_next = round(proc.center_x + (1 + 1 * angle) * math.cos(1 * angle))
+        y_next = round(proc.center_y + (1 + 1 * angle) * math.sin(1 * angle))
         pos.append((x_next, y_next))
     return pos
 
@@ -51,12 +64,15 @@ def _score_iteration(proc, candidate_x, candidate_y):
     # This prevents the mean_shift method to create debug information each time it is called
     # which accounts for > 50% of its runtime
 
+    was_debug = False
+
     if "debug_dir" in proc.parameters:
+        was_debug = True
         debug_dir = proc.parameters.pop("debug_dir")
 
     proc.execute_method("tracks.mean_shift")
 
-    if "debug_dir" in proc.parameters:
+    if was_debug:
         proc.parameters["debug_dir"] = debug_dir
 
     # Get the track distances
@@ -100,6 +116,9 @@ def center_mean(proc):
     # centroid = (sum(x) / len(outer_border), sum(y) / len(outer_border))
     y,x = zip(*outer_border)
     center_x, center_y = (max(x) + min(x))/2, (max(y) + min(y))/2
+
+    if proc.verbose:
+        print("Center found is: (" + str(round(center_y)) + ", " + str(round(center_x)) + ")")
 
     proc.center_y = round(center_y)
     proc.center_x = round(center_x)

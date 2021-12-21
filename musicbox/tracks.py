@@ -1,5 +1,6 @@
 from scipy.spatial import distance
 from sklearn.cluster import MeanShift
+import matplotlib.pyplot as plt
 import numpy as np
 import timeit
 import cv2
@@ -16,6 +17,15 @@ def mean_shift(proc):
         inner_distance = distance.cdist(shape_center, [(proc.center_y, proc.center_x)]).min()
         outer_distance = distance.cdist(shape_center, proc.disc_edge).min()
         inner_distances.append(inner_distance / (outer_distance + inner_distance))
+
+
+    if "debug_dir" in proc.parameters:
+        start_time = timeit.default_timer()
+
+        plt.scatter(inner_distances, np.zeros_like(inner_distances))
+        plt.savefig(os.path.join(proc.parameters["debug_dir"], "note_disances.tiff"))
+
+        print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
 
     # Now we may start clustering these points
 
@@ -66,6 +76,7 @@ def mean_shift(proc):
         plot_data = zip(classes, proc.shapes.values())
         tracks_image = musicbox.helpers.make_image_from_shapes(proc.current_image, plot_data)
         tracks_image = musicbox.helpers.make_color_image(tracks_image)
+        tracks_image = cv2.circle(tracks_image, (proc.center_x, proc.center_y), 3, (255, 0, 0), 3)
 
         cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "tracks.tiff"), tracks_image)
 
