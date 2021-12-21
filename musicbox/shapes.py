@@ -75,13 +75,13 @@ def filter_inner(proc):
         start_time = timeit.default_timer()
         
         # Generate image prior to filtering
-        shapes_before = musicbox.helpers.make_image_from_shapes(proc.original_image, proc.shapes)
+        shapes_before = musicbox.helpers.make_image_from_shapes(proc.current_image, proc.shapes)
         shapes_before = musicbox.helpers.make_color_image(shapes_before)
         shapes_before = cv2.circle(shapes_before, (proc.center_x, proc.center_y), 3, (255, 0, 0), 3)
 
         cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "filter_label_before.tiff"), shapes_before)
 
-        shapes_after = musicbox.helpers.make_image_from_shapes(proc.original_image, filtered_shapes)
+        shapes_after = musicbox.helpers.make_image_from_shapes(proc.current_image, filtered_shapes)
         shapes_after = musicbox.helpers.make_color_image(shapes_after)
         cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "filter_label_after.tiff"), shapes_after)
         

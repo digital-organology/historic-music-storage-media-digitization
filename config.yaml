@@ -2,6 +2,7 @@ ariston_iterative:
   pipeline:
     - preprocessing.binarization
     - preprocessing.edge_in
+    - preprocessing.crop_to_contents
     - image.labeling
     - image.center_mean
     - image.extract_shapes
@@ -55,6 +56,7 @@ ariston:
   pipeline:
     - preprocessing.binarization
     - preprocessing.edge_in
+    - preprocessing.crop_to_contents
     - image.labeling
     - image.center_mean
     - image.extract_shapes

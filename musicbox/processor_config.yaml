@@ -12,6 +12,12 @@ methods:
       - edges
     suggests: []
     parameters: []
+  preprocessing.crop_to_contents:
+    requires:
+      - binarization
+    provides: []
+    suggests: []
+    parameters: []
   image.center_mean:
     requires: []
     provides:
