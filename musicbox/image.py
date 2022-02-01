@@ -109,7 +109,8 @@ def center_mean(proc):
     max_count = np.argmax(counts)
     outer_border_id = indices[max_count]
     
-    # Transform it into a polygon
+    # David, stupid and young: Transform it into a polygon
+    # David, now wiser and older: This is not actually what a polygon is
 
     outer_border = np.argwhere(proc.labels == outer_border_id).astype(np.int32)
 
@@ -122,6 +123,31 @@ def center_mean(proc):
 
     proc.center_y = round(center_y)
     proc.center_x = round(center_x)
+
+def center_least_squares(proc):
+    # First get the outer border as usual
+    indices, counts = np.unique(proc.labels, return_counts = True)
+    indices = indices[1:]
+    counts = counts[1:]
+    max_count = np.argmax(counts)
+    outer_border_id = indices[max_count]
+
+    outer_border = np.argwhere(proc.labels == outer_border_id).astype(np.int32)
+    x,y = zip(*outer_border)
+
+    x = np.array(x)
+    y = np.array(y)
+
+    coeffs = fit_ellipse(x, y)
+
+    x0, y0 = center_from_cart(coeffs)
+
+    if proc.verbose:
+        print("Center found is: (" + str(round(x0)) + ", " + str(round(y0)) + ")")
+
+    proc.center_x = round(x0)
+    proc.center_y = round(y0)
+
 
 ## Labeling method
 
@@ -246,3 +272,53 @@ def _process_pixel(img, y, x, distance, y_limit, x_limit, current_shape):
         img[img == shape] = oldest_shape
 
     return current_shape
+
+
+
+def fit_ellipse(x, y):
+    """
+
+    Fit the coefficients a,b,c,d,e,f, representing an ellipse described by
+    the formula F(x,y) = ax^2 + bxy + cy^2 + dx + ey + f = 0 to the provided
+    arrays of data points x=[x1, x2, ..., xn] and y=[y1, y2, ..., yn].
+
+    Based on the algorithm of Halir and Flusser, "Numerically stable direct
+    least squares fitting of ellipses'.
+
+
+    """
+
+    D1 = np.vstack([x**2, x*y, y**2]).T
+    D2 = np.vstack([x, y, np.ones(len(x))]).T
+    S1 = D1.T @ D1
+    S2 = D1.T @ D2
+    S3 = D2.T @ D2
+    T = -np.linalg.inv(S3) @ S2.T
+    M = S1 + S2 @ T
+    C = np.array(((0, 0, 2), (0, -1, 0), (2, 0, 0)), dtype=float)
+    M = np.linalg.inv(C) @ M
+    eigval, eigvec = np.linalg.eig(M)
+    con = 4 * eigvec[0]* eigvec[2] - eigvec[1]**2
+    ak = eigvec[:, np.nonzero(con > 0)[0]]
+    return np.concatenate((ak, T @ ak)).ravel()
+
+
+def center_from_cart(coeffs):
+    # We use the formulas from https://mathworld.wolfram.com/Ellipse.html
+    # which assumes a cartesian form ax^2 + 2bxy + cy^2 + 2dx + 2fy + g = 0.
+    # Therefore, rename and scale b, d and f appropriately.
+    a = coeffs[0]
+    b = coeffs[1] / 2
+    c = coeffs[2]
+    d = coeffs[3] / 2
+    f = coeffs[4] / 2
+
+    den = b**2 - a*c
+    if den > 0:
+        raise ValueError('coeffs do not represent an ellipse: b^2 - 4ac must'
+                         ' be negative!')
+
+    # The location of the ellipse centre.
+    x0, y0 = (c*d - b*f) / den, (a*f - b*d) / den
+
+    return (x0, y0)

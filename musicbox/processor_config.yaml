@@ -133,5 +133,12 @@ methods:
       - key
     suggests: []
     parameters: []
+  image.center_least_squares:
+    requires: []
+    provides:
+      - center
+    suggests:
+      - binarization
+    parameters: []
 
   

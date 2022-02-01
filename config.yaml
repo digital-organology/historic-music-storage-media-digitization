@@ -52,6 +52,59 @@ ariston_iterative:
       22: 83
       23: 85
       24: 86
+ariston_lsq:
+  pipeline:
+    - preprocessing.binarization
+    - preprocessing.edge_in
+    - preprocessing.crop_to_contents
+    - image.labeling
+    - image.center_least_squares
+    - image.extract_shapes
+    - shapes.find_disc_edges
+    - shapes.filter_inner
+    - tracks.mean_shift
+    - tracks.correct_empty
+    - notes.create_notes
+    - notes.find_beat_length
+    - notes.create_midi
+    - analysis.detect_key
+  config:
+    label_distance: 1
+    inner_radius: 1.7
+    outer_radius: 4.5
+    # Average width of each track as relative distance between center and outer border
+    track_width: 0.024 # Original value: 0.02267693
+    first_track: 0.42
+    n_tracks: 24
+    bandwidth: 8
+    # Not actually bpm as we don't even know what a beat is...
+    # Update: Maybe actually bpm now
+    bpm: 90 
+    track_mappings:
+      1: 45
+      2: 47
+      3: 50
+      4: 52
+      5: 54
+      6: 59
+      7: 61
+      8: 62
+      9: 64
+      10: 66
+      11: 68
+      12: 69
+      13: 71
+      14: 73
+      15: 74
+      16: 75
+      17: 76
+      18: 78
+      19: 79
+      20: 80
+      21: 81
+      22: 83
+      23: 85
+      24: 86
 ariston:
   pipeline:
     - preprocessing.binarization
