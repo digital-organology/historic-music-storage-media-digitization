@@ -1,3 +1,4 @@
+from turtle import back
 import numpy as np
 import cv2
 import math
@@ -8,6 +9,8 @@ from scipy.spatial import distance
 from datetime import datetime
 from sklearn.cluster import KMeans
 from midiutil.MidiFile import MIDIFile
+from musicbox.helpers import gen_lut, make_color_image
+
 
 def find_beat_length(proc):
     note_length = proc.note_data[:,3]
@@ -156,17 +159,46 @@ def create_notes(proc):
         mini, maxi = _calculate_angles(shape, proc.center_x, proc.center_y)
         shape_min.append(mini)
         shape_max.append(maxi)
-    
+
     arr = np.column_stack((list(shape_ids), shape_min, shape_max))
     diff = arr[:,2] - arr[:,1]
     # diff[diff > 200] = 360 - diff[diff > 200]
     arr = np.c_[arr, diff]
 
+    if "debug_dir" in proc.parameters:
+        start_time = timeit.default_timer()
+
+
+        background = make_color_image(proc.labels.copy())
+
+        for shape_id, shape in proc.shapes.items():
+            # Get the 
+            point_1, point_2 = _calculate_angles(shape, proc.center_x, proc.center_y, return_points = True)
+            # import pdb; pdb.set_trace()
+            background[int(point_1[0]), int(point_1[1])] = (255, 255, 255)
+            background[int(point_2[0]), int(point_2[1])] = (255, 255, 255)
+
+            center = np.mean(shape, 0).astype(np.uint32)
+            point = (center[1], center[0])
+            cv2.putText(background, str(shape_id), point,
+                        cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+                        0.7,
+                        (255, 255, 255),
+                        2)
+
+        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "note_conversion.tiff"), background)
+
+        np.savetxt(os.path.join(proc.parameters["debug_dir"], "detected_angles.csv"), arr, delimiter = ",", header = "id, min_angle, max_angle, diff", comments = "")
+
+
+        print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
+
+
     proc.note_data = arr
     return True
 
 def _convert_track_degree(data_array, tracks_to_notes, proc, debug_dir = ""):
-    start_time = (360 - data_array[:,2])
+    start_time = (360 - data_array[:,3])
     duration = data_array[:,4]
 
     # import pdb; pdb.set_trace()
@@ -188,13 +220,15 @@ def _convert_track_degree(data_array, tracks_to_notes, proc, debug_dir = ""):
 
     # pitch = np.vectorize(tracks_to_notes.get)(data_array[:,0])
     if "debug_dir" != "":
-        arr = np.array((start_time, duration, pitch, data_array[:,4])).T
+        arr = np.array((start_time, duration, pitch, data_array[:,1])).T
         np.savetxt(os.path.join(debug_dir, "music_data.csv"), arr, delimiter = ",", header = "start, duration, midi_tone, shape_id", comments = "")
     # import pdb; pdb.set_trace()
     return (start_time, duration, pitch)
 
 def create_midi(proc):
     data_array = np.c_[list(proc.assignments.values()), proc.note_data]
+
+    # At this point data_array contains track, shape_id, min_angle (end), max_angle (start), diff (length)
     start_time, duration, pitch = _convert_track_degree(data_array, proc.parameters["track_mappings"], proc, proc.parameters["debug_dir"] if "debug_dir" in proc.parameters.keys() else "")
     midi_obj = MIDIFile(numTracks=1,
                 removeDuplicates=False,  # set True?
@@ -223,7 +257,7 @@ def create_midi(proc):
                          duration = duration[i],
                          volume = volume)
 
-    filename = "output_" + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + ".mid"
+    filename = "output_" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".mid"
 
     proc.midi_filename = filename
 

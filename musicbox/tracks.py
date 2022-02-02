@@ -23,7 +23,7 @@ def mean_shift(proc):
         start_time = timeit.default_timer()
 
         plt.scatter(inner_distances, np.zeros_like(inner_distances))
-        plt.savefig(os.path.join(proc.parameters["debug_dir"], "note_disances.tiff"))
+        plt.savefig(os.path.join(proc.parameters["debug_dir"], "note_distances.tiff"))
 
         print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
 
