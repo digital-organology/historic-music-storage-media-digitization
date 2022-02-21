@@ -121,6 +121,7 @@ methods:
       - notes
     provides:
       - midi
+      - data_array
     suggests:
       - beat_length
     parameters:
@@ -131,6 +132,12 @@ methods:
       - midi
     provides:
       - key
+    suggests: []
+    parameters: []
+  analysis.find_harmonies:
+    requires:
+      - data_array
+    provides: []
     suggests: []
     parameters: []
   image.center_least_squares:

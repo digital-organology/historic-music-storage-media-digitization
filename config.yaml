@@ -68,6 +68,7 @@ ariston_lsq:
     - notes.find_beat_length
     - notes.create_midi
     - analysis.detect_key
+    - analysis.find_harmonies
   config:
     label_distance: 1
     inner_radius: 1.7

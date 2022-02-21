@@ -22,7 +22,10 @@ class Processor(object):
     # but we do this to create a better overview of what exists
     original_image = None
     current_image = None
-    notes_data = None
+    # This contains shape_id, min_angle (end), max_angle (start), diff (length)
+    note_data = None
+    # This has note_id, start_time, duration, pitch
+    data_array = None
     labels = None
     shapes = None
     center_x = None
