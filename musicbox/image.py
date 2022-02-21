@@ -172,6 +172,8 @@ def labeling(proc):
 
         cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "labels.png"), color_image)
 
+        np.savetxt(os.path.join(proc.parameters["debug_dir"], "label_array.txt"), labels, fmt = "%i", delimiter = "\t")
+
         print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
 
 
@@ -274,6 +276,7 @@ def _process_pixel(img, y, x, distance, y_limit, x_limit, current_shape):
     return current_shape
 
 
+# The following methods are adapted from here: https://scipython.com/blog/direct-linear-least-squares-fitting-of-an-ellipse/
 
 def fit_ellipse(x, y):
     """
