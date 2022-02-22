@@ -138,7 +138,11 @@ def center_least_squares(proc):
     x = np.array(x)
     y = np.array(y)
 
+    # Use a least squares estimator to fit an ellipse to the coordinates and get it's coefficients
+
     coeffs = fit_ellipse(x, y)
+
+    # Transform from cartesian form to (partial) general form and get the center coordinates
 
     x0, y0 = center_from_cart(coeffs)
 
