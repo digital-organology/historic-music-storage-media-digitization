@@ -34,7 +34,7 @@ def find_harmonies(proc):
     chords = []
 
     for idx, row in bass_notes.iterrows():
-        chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()])
+        chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()], include_previous=True)
         chord_str = _format_chord(chord_notes)
         # chord_str = _notes_to_string(chord_notes, False, False)
         chords.append(chord_str)
@@ -57,13 +57,7 @@ def find_harmonies(proc):
 
     _make_chord_image(data, proc, unique_chords, "lowest_four_tracks")
 
-
-
     print(chord_freq)
-
-
-
-
 
 def _find_simultaneous_notes(note_id, data_array, include_previous = False, include_wider = False):
     """Find notes that sound simultaneous with the specified note
@@ -81,7 +75,7 @@ def _find_simultaneous_notes(note_id, data_array, include_previous = False, incl
     conditions = (data_array["start_time"].between(start_time, end_time, inclusive = "both"))
 
     if include_previous:
-        conditions = conditions | (data_array["end_time"].between(end_time, start_time, inclusive = "both"))
+        conditions = conditions | (data_array["end_time"].between(start_time, end_time, inclusive = "both"))
 
     if include_wider:
         conditions = conditions | ((data_array["start_time"] >= start_time) & (data_array["end_time"] <= end_time))
@@ -141,16 +135,17 @@ def _format_chord(notes_df):
     return chord_str
 
 def _make_chord_image(data_array, proc, chord_names, filename):
-    base_image = proc.labels.copy().astype(np.uint8)
+    base_image = proc.labels.copy().astype(np.uint32)
 
     data_array[data_array["chord_id"].isna()] = data_array["chord_id"].max() + 1
 
     for idx, row in data_array.iterrows():
         base_image[base_image == idx] = row.chord_id
-        # if (idx < len(chord_names)):
-        #     y_coord, x_coord = np.argwhere(row.chord_id == base_image).max(axis = 0)
-        #     text = chord_names[idx]
-        #     cv2.putText(base_image, text, (x_coord, y_coord), cv2.FONT_HERSHEY_COMPLEX, 2, row.chord_id, 2 )
+
+    # if (idx < len(chord_names)):
+    #     y_coord, x_coord = np.argwhere(row.chord_id == base_image).max(axis = 0)
+    #     text = chord_names[idx]
+    #     cv2.putText(base_image, text, (x_coord, y_coord), cv2.FONT_HERSHEY_COMPLEX, 2, row.chord_id, 2 )
 
     image = make_color_image(base_image)
     cv2.imwrite(filename + ".tiff", image)
