@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import cv2
 import collections
-from musicbox.helpers import gen_lut, make_color_image
+from musicbox.helpers import gen_lut, make_color_image, midi_to_notes
 
 
 def detect_key(proc):
@@ -20,8 +20,10 @@ def find_harmonies(proc):
 
     # Three Methods to check out here:
     # 1. Take the bottom four tracks and find the chords for each fo these notes
-    # 2. Find the lowest sounding note at every position of the disc and calculate the chords for that
-    # 3. Sort everything by start time and then find a way to plow through everything by that
+    # 2. Sort everything by start time and then find a way to plow through everything by that
+    # 3. Find the lowest sounding note at every position of the disc and calculate the chords for that
+
+    # First approach
 
     data = df.copy()
     data["chord_id"] = pd.Series(dtype = "int")
@@ -33,7 +35,8 @@ def find_harmonies(proc):
 
     for idx, row in bass_notes.iterrows():
         chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()])
-        chord_str = _notes_to_string(chord_notes)
+        chord_str = _format_chord(chord_notes)
+        # chord_str = _notes_to_string(chord_notes, False, False)
         chords.append(chord_str)
 
         mapping[idx] = chord_notes.index.to_list()
@@ -52,7 +55,10 @@ def find_harmonies(proc):
 
     chord_freq = collections.Counter(chords)
 
-    _make_chord_image(data, proc)
+    _make_chord_image(data, proc, unique_chords, "lowest_four_tracks")
+
+
+
     print(chord_freq)
 
 
@@ -84,7 +90,7 @@ def _find_simultaneous_notes(note_id, data_array, include_previous = False, incl
 
     return sim_notes
 
-def _notes_to_string(notes_df, as_midi = False, deduplicate = True):
+def _notes_to_string(notes_df, as_midi = False, deduplicate = False):
     notes_df = notes_df.sort_values(by=["midi_note"])
 
     if as_midi:
@@ -93,36 +99,59 @@ def _notes_to_string(notes_df, as_midi = False, deduplicate = True):
             chord_tones = list(dict.fromkeys(chord_tones))
         return "-".join(str(note) for note in chord_tones)
 
+    midi_to_note = midi_to_notes()
+
+
+
     midi_to_note = {
-        21: "A",
-        22: "Bb",
-        23: "B",
-        24: "C",
-        25: "C#",
-        26: "D",
-        27: "D#",
-        28: "E",
-        29: "F",
-        30: "F#",
-        31: "G",
-        32: "G#"
+        0: "C",
+        1: "C#",
+        2: "D",
+        3: "D#",
+        4: "E",
+        5: "F",
+        6: "F#",
+        7: "G",
+        8: "G#",
+        9: "A",
+        10: "Bb",
+        11: "B"
     }
 
-    chord_tones = [tone % 12 + 21 for tone in notes_df["midi_note"].tolist()]
+    chord_tones = [tone % 12 for tone in notes_df["midi_note"].tolist()]
     if deduplicate:
         chord_tones = list(dict.fromkeys(chord_tones))
 
-    return "-".join(midi_to_note[note] for note in chord_tones)
+    return "-".join(midi_to_note[note] for note in notes_df["midi_note"].tolist())
 
 
-def _make_chord_image(data_array, proc):
-    base_image = proc.labels.copy()
+def _format_chord(notes_df):
+    notes_df = notes_df.sort_values(by=["midi_note"])
+    notes_df["base_note"] = notes_df["midi_note"].mod(12)
+    chord_str = ""
+    tone_map = midi_to_notes()
+
+    while len(notes_df) > 0:
+        row = notes_df.iloc[0]
+        duplicate_notes = notes_df[notes_df["base_note"] == row["base_note"]]
+        chord_str = chord_str + "-".join([tone_map[note] for note in duplicate_notes["midi_note"].tolist()]) + "\n"
+        notes_df = notes_df.drop(notes_df[notes_df["base_note"] == row["base_note"]].index)
+
+    print(chord_str)
+    return chord_str
+
+def _make_chord_image(data_array, proc, chord_names, filename):
+    base_image = proc.labels.copy().astype(np.uint8)
 
     data_array[data_array["chord_id"].isna()] = data_array["chord_id"].max() + 1
 
     for idx, row in data_array.iterrows():
         base_image[base_image == idx] = row.chord_id
+        # if (idx < len(chord_names)):
+        #     y_coord, x_coord = np.argwhere(row.chord_id == base_image).max(axis = 0)
+        #     text = chord_names[idx]
+        #     cv2.putText(base_image, text, (x_coord, y_coord), cv2.FONT_HERSHEY_COMPLEX, 2, row.chord_id, 2 )
 
     image = make_color_image(base_image)
-    cv2.imwrite("chords.png", image)
+    cv2.imwrite(filename + ".tiff", image)
     

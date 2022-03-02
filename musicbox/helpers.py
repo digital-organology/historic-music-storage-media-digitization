@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import math
+import pkgutil
+import csv
 from scipy.spatial import distance
 
 def gen_lut():
@@ -152,3 +154,8 @@ def calculate_angles(shape, center_x, center_y, return_points = False):
             return (second_m, first_m)
         else:
             return (degs_second, degs_first)
+
+def midi_to_notes():
+    stream = pkgutil.get_data(__name__, "data/midi_notes.csv")
+    reader = csv.reader(stream.decode("utf-8").splitlines(), delimiter = ",")
+    return {int(row[0]):row[1] for row in reader}
