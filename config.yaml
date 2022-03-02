@@ -65,7 +65,6 @@ ariston_lsq:
     - tracks.mean_shift
     - tracks.correct_empty
     - notes.create_notes
-    - notes.find_beat_length
     - notes.create_midi
     - analysis.detect_key
     - analysis.find_harmonies

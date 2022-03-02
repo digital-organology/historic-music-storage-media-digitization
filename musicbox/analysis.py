@@ -27,6 +27,12 @@ def find_harmonies(proc):
 
     data = df.copy()
     data["chord_id"] = pd.Series(dtype = "int")
+
+    # 2. Approach
+
+    find_harmonies_sync(df.copy(), proc, 5, 59)
+
+
     bass_notes = data[data["midi_note"] <= 52]
 
     mapping = {}
@@ -34,7 +40,7 @@ def find_harmonies(proc):
     chords = []
 
     for idx, row in bass_notes.iterrows():
-        chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()], include_previous=True)
+        chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()], include_previous=False)
         chord_str = _format_chord(chord_notes)
         # chord_str = _notes_to_string(chord_notes, False, False)
         chords.append(chord_str)
@@ -57,7 +63,57 @@ def find_harmonies(proc):
 
     _make_chord_image(data, proc, unique_chords, "lowest_four_tracks")
 
-    print(chord_freq)
+    _chords_to_file(unique_chords, "chords_bass.txt")
+
+
+
+
+
+
+def find_harmonies_sync(data, proc, lookahead, cutoff):
+    data["chord_id"] = pd.Series(dtype = "int")
+    data.sort_values(by = ["start_time"])
+
+    mapping = {}
+    unique_chords = []
+    chords = []
+    chord_id = 1
+
+
+    start_time = data[data["chord_id"].isna()]["start_time"].min()
+
+    while start_time < 360:
+        print("Starting at", start_time)
+
+        chunk = data[(data["start_time"].between(start_time, start_time + lookahead)) & (data["chord_id"].isna())]
+
+        print(len(chunk), "Notes in chunk")
+        
+        for idx, row in chunk[(chunk["midi_note"] == chunk["midi_note"].min()) & (chunk["midi_note"] <= cutoff)].iterrows():
+            chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()], include_previous=False)
+            chord_str = _format_chord(chord_notes)
+            # chord_str = _notes_to_string(chord_notes, False, False)
+            chords.append(chord_str)
+
+            mapping[idx] = chord_notes.index.to_list()
+
+
+            # This will deduplicate chord ids in the data array and use ascending ids
+
+            if not chord_str in unique_chords:
+                unique_chords.append(chord_str)
+
+            chord_id = unique_chords.index(chord_str)
+            data.loc[chord_notes.index, "chord_id"] = chord_id
+            # chunk.loc[chord_notes.index, "chord_id"] = chord_id
+
+        start_time = start_time + lookahead
+
+        chord_freq = collections.Counter(chords)
+
+    _make_chord_image(data, proc, unique_chords, "sync")
+
+    _chords_to_file(unique_chords, "chords_sync.txt")
 
 def _find_simultaneous_notes(note_id, data_array, include_previous = False, include_wider = False):
     """Find notes that sound simultaneous with the specified note
@@ -94,8 +150,6 @@ def _notes_to_string(notes_df, as_midi = False, deduplicate = False):
         return "-".join(str(note) for note in chord_tones)
 
     midi_to_note = midi_to_notes()
-
-
 
     midi_to_note = {
         0: "C",
@@ -135,12 +189,16 @@ def _format_chord(notes_df):
     return chord_str
 
 def _make_chord_image(data_array, proc, chord_names, filename):
-    base_image = proc.labels.copy().astype(np.uint32)
+    base_image = proc.labels.copy().astype(np.uint16)
 
-    data_array[data_array["chord_id"].isna()] = data_array["chord_id"].max() + 1
+    unassigned_color = data_array["chord_id"].max() + 1
+
+    data_array[data_array["chord_id"].isna()] = unassigned_color
 
     for idx, row in data_array.iterrows():
         base_image[base_image == idx] = row.chord_id
+
+    cv2.putText(base_image, "Unassigned", (proc.center_x, proc.center_y), cv2.FONT_HERSHEY_COMPLEX, 2, unassigned_color, 1)
 
     # if (idx < len(chord_names)):
     #     y_coord, x_coord = np.argwhere(row.chord_id == base_image).max(axis = 0)
@@ -150,3 +208,7 @@ def _make_chord_image(data_array, proc, chord_names, filename):
     image = make_color_image(base_image)
     cv2.imwrite(filename + ".tiff", image)
     
+
+def _chords_to_file(chords, filename):
+    with open(filename, "w") as f:
+        f.writelines(f'{chord}\n' for chord in chords)
