@@ -1,1 +1,1 @@
-__all__ = ["image", "notes", "preprocessing", "processor", "server", "shapes", "tracks"] 
+__all__ = ["image", "notes", "preprocessing", "analysis", "processor", "server", "shapes", "tracks"] 
