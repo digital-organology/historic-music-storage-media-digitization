@@ -134,12 +134,21 @@ methods:
       - key
     suggests: []
     parameters: []
-  analysis.find_harmonies:
+  analysis.find_harmonies_bass:
     requires:
       - data_array
     provides: []
     suggests: []
-    parameters: []
+    parameters:
+      - bass_cutoff
+  analysis.find_harmonies_seq:
+    requires:
+      - data_array
+    provides: []
+    suggests: []
+    parameters:
+      - lookahead
+      - cutoff
   image.center_least_squares:
     requires: []
     provides:

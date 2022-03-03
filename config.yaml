@@ -67,7 +67,8 @@ ariston_lsq:
     - notes.create_notes
     - notes.create_midi
     - analysis.detect_key
-    - analysis.find_harmonies
+    - analysis.find_harmonies_bass
+    - analysis.find_harmonies_seq
   config:
     label_distance: 1
     inner_radius: 1.7
@@ -77,6 +78,9 @@ ariston_lsq:
     first_track: 0.42
     n_tracks: 24
     bandwidth: 8
+    bass_cutoff: 52
+    cutoff: 59
+    lookahead: 5
     # Not actually bpm as we don't even know what a beat is...
     # Update: Maybe actually bpm now
     bpm: 90 

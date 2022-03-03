@@ -2,8 +2,8 @@ import music21
 import pandas as pd
 import numpy as np
 import cv2
-import collections
-from musicbox.helpers import gen_lut, make_color_image, midi_to_notes
+from musicbox.helpers import make_color_image, midi_to_notes
+from datetime import datetime
 
 
 def detect_key(proc):
@@ -12,28 +12,14 @@ def detect_key(proc):
     proc.key = key
     print("INFO: Key detected is " + key.tonic.name + " " + key.mode)
 
-def find_harmonies(proc):
-    df = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
-    df = df.astype({"note_id": int, "midi_note": int})
-    df = df.set_index("note_id")
-    df["end_time"] = df["start_time"] + df["duration"]
-
-    # Three Methods to check out here:
-    # 1. Take the bottom four tracks and find the chords for each fo these notes
-    # 2. Sort everything by start time and then find a way to plow through everything by that
-    # 3. Find the lowest sounding note at every position of the disc and calculate the chords for that
-
-    # First approach
-
-    data = df.copy()
+def find_harmonies_bass(proc):
+    data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
+    data = data.astype({"note_id": int, "midi_note": int})
+    data = data.set_index("note_id")
+    data["end_time"] = data["start_time"] + data["duration"]
     data["chord_id"] = pd.Series(dtype = "int")
 
-    # 2. Approach
-
-    find_harmonies_sync(df.copy(), proc, 5, 59)
-
-
-    bass_notes = data[data["midi_note"] <= 52]
+    bass_notes = data[data["midi_note"] <= proc.parameters["bass_cutoff"]]
 
     mapping = {}
     unique_chords = []
@@ -41,7 +27,7 @@ def find_harmonies(proc):
 
     for idx, row in bass_notes.iterrows():
         chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()], include_previous=False)
-        chord_str = _format_chord(chord_notes)
+        chord_str = _format_chord(chord_notes, True)
         # chord_str = _notes_to_string(chord_notes, False, False)
         chords.append(chord_str)
 
@@ -56,21 +42,17 @@ def find_harmonies(proc):
         chord_id = unique_chords.index(chord_str)
         data.loc[chord_notes.index, "chord_id"] = chord_id
 
-        # This would use unique ids for each occurence
-        # data.loc[chord_notes.index, "chord_id"] = idx
+    base_filename = "chords_bass_" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    chord_freq = collections.Counter(chords)
+    _make_chord_image(data, proc, unique_chords, base_filename)
 
-    _make_chord_image(data, proc, unique_chords, "lowest_four_tracks")
+    _chords_to_file(unique_chords, base_filename)
 
-    _chords_to_file(unique_chords, "chords_bass.txt")
-
-
-
-
-
-
-def find_harmonies_sync(data, proc, lookahead, cutoff):
+def find_harmonies_seq(proc):
+    data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
+    data = data.astype({"note_id": int, "midi_note": int})
+    data = data.set_index("note_id")
+    data["end_time"] = data["start_time"] + data["duration"]
     data["chord_id"] = pd.Series(dtype = "int")
     data.sort_values(by = ["start_time"])
 
@@ -85,13 +67,13 @@ def find_harmonies_sync(data, proc, lookahead, cutoff):
     while start_time < 360:
         print("Starting at", start_time)
 
-        chunk = data[(data["start_time"].between(start_time, start_time + lookahead)) & (data["chord_id"].isna())]
+        chunk = data[(data["start_time"].between(start_time, start_time + proc.parameters["lookahead"])) & (data["chord_id"].isna())]
 
         print(len(chunk), "Notes in chunk")
         
-        for idx, row in chunk[(chunk["midi_note"] == chunk["midi_note"].min()) & (chunk["midi_note"] <= cutoff)].iterrows():
+        for idx, row in chunk[(chunk["midi_note"] == chunk["midi_note"].min()) & (chunk["midi_note"] <= proc.parameters["cutoff"])].iterrows():
             chord_notes = _find_simultaneous_notes(idx, data[data["chord_id"].isna()], include_previous=False)
-            chord_str = _format_chord(chord_notes)
+            chord_str = _format_chord(chord_notes, True)
             # chord_str = _notes_to_string(chord_notes, False, False)
             chords.append(chord_str)
 
@@ -107,13 +89,13 @@ def find_harmonies_sync(data, proc, lookahead, cutoff):
             data.loc[chord_notes.index, "chord_id"] = chord_id
             # chunk.loc[chord_notes.index, "chord_id"] = chord_id
 
-        start_time = start_time + lookahead
+        start_time = start_time + proc.parameters["lookahead"]
 
-        chord_freq = collections.Counter(chords)
+    base_filename = "chords_bass_" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    _make_chord_image(data, proc, unique_chords, "sync")
+    _make_chord_image(data, proc, unique_chords, base_filename)
 
-    _chords_to_file(unique_chords, "chords_sync.txt")
+    _chords_to_file(unique_chords, base_filename)
 
 def _find_simultaneous_notes(note_id, data_array, include_previous = False, include_wider = False):
     """Find notes that sound simultaneous with the specified note
@@ -123,7 +105,7 @@ def _find_simultaneous_notes(note_id, data_array, include_previous = False, incl
         data_array (DataFrame): Data in which to search for the notes
         include_previous (bool, optional): Whather to include notes that started before the specified note but still sound. Defaults to False.
         include_wider (bool, optional): Whather to include notes that started before the specified note and end after it. Defaults to False.
-    """    
+    """
     note = data_array.T[note_id]
     start_time = note.start_time
     end_time = note.end_time
@@ -173,7 +155,7 @@ def _notes_to_string(notes_df, as_midi = False, deduplicate = False):
     return "-".join(midi_to_note[note] for note in notes_df["midi_note"].tolist())
 
 
-def _format_chord(notes_df):
+def _format_chord(notes_df, as_midi = False):
     notes_df = notes_df.sort_values(by=["midi_note"])
     notes_df["base_note"] = notes_df["midi_note"].mod(12)
     chord_str = ""
@@ -182,10 +164,12 @@ def _format_chord(notes_df):
     while len(notes_df) > 0:
         row = notes_df.iloc[0]
         duplicate_notes = notes_df[notes_df["base_note"] == row["base_note"]]
-        chord_str = chord_str + "-".join([tone_map[note] for note in duplicate_notes["midi_note"].tolist()]) + "\n"
+        if as_midi:
+            chord_str = chord_str + "-".join([str(note) for note in duplicate_notes["midi_note"].tolist()]) + "\n"
+        else:
+            chord_str = chord_str + "-".join([tone_map[note] for note in duplicate_notes["midi_note"].tolist()]) + "\n"
         notes_df = notes_df.drop(notes_df[notes_df["base_note"] == row["base_note"]].index)
 
-    print(chord_str)
     return chord_str
 
 def _make_chord_image(data_array, proc, chord_names, filename):
@@ -210,5 +194,5 @@ def _make_chord_image(data_array, proc, chord_names, filename):
     
 
 def _chords_to_file(chords, filename):
-    with open(filename, "w") as f:
+    with open(filename + ".txt", "w") as f:
         f.writelines(f'{chord}\n' for chord in chords)
