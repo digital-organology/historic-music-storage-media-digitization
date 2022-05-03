@@ -108,6 +108,7 @@ class Processor(object):
             os.mkdir(debug_dir)
         return cls(img, config, debug_dir, verbose)
 
+
     def prepare_pipeline(self):
         p_config_path = os.path.join(Path(__file__).parent.absolute(), "processor_config.yaml")
         with open(p_config_path, "r") as stream:
@@ -221,3 +222,36 @@ class Processor(object):
         if not self.execute_pipeline():
             print("Error when executing pipeline, giving up.")
             return False
+
+    @staticmethod    
+    def batch_process(path: str, config: dict, debug_dir = "", verbose = False):
+        """Batch process images
+
+        Args:
+            path (str): Folder to process
+            config (dict): Configuration to use
+            debug_dir (str, optional): Directory in which to create debug information. Will be created. Defaults to "".
+            verbose (bool, optional): Verbosity of the program. Defaults to False.
+        """
+
+        if not os.path.exists(path):
+            raise ValueError("Path provided does not exists")
+
+        for file in os.listdir(path):
+            if file.lower().endswith((".jpg", ".png", ".tiff", ".jpeg")):
+                if not debug_dir == "":
+                    file_debug_dir = os.path.join(debug_dir, file)
+                    if not os.path.exists(file_debug_dir):
+                        os.makedirs(file_debug_dir)
+                else:
+                    file_debug_dir = ""
+
+                print(f'Processing file {file}')
+
+                file_path = os.path.join(path, file)
+
+                try:
+                    file_proc = Processor.from_file(file_path, config, debug_dir = file_debug_dir, verbose = verbose)
+                    file_proc.run()
+                except Exception as e:
+                    print(f'Error when processing {file}: {str(e)}')
