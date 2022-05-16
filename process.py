@@ -7,10 +7,13 @@ def main():
     parser.add_argument("input", help = "input image file, must be able to open with cv2.imread")
     parser.add_argument("-d", "--debug-dir", dest = "debug", default = "", help = "Where to write debug files to")
     parser.add_argument("-v", "--verbose", action = "store_true", help = "Enable verbose output")
+    parser.add_argument("-b", "--batch", help = "batch mode will interpret input as a folder and attempt to process all files inside that folder",
+                        action = "store_true")
     parser.add_argument("-c", "--config", help = "config file containing required information about plate type",
                         const = "config.yaml", default = "config.yaml", nargs = "?")
     parser.add_argument("-t", "--type", help = "type of the plate to process",
-                        const = "ariston", default = "ariston", nargs = "?")                                                       
+                        const = "ariston", default = "ariston", nargs = "?")
+    parser.set_defaults(verbose = True, batch = False)                                                   
     args = parser.parse_args()
 
     with open(args.config, "r") as stream:
@@ -22,9 +25,11 @@ def main():
 
     config = config[args.type]
 
-    our_processor = musicbox.processor.Processor.from_file(args.input, config, debug_dir = args.debug, verbose = True)
-
-    our_processor.run()
+    if args.batch:
+        musicbox.processor.Processor.batch_process(args.input, config, debug_dir = args.debug, verbose = args.verbose)
+    else:
+        our_processor = musicbox.processor.Processor.from_file(args.input, config, debug_dir = args.debug, verbose = True)
+        our_processor.run()
 
 if __name__ == "__main__":
     main()
