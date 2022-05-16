@@ -67,8 +67,10 @@ ariston_lsq:
     - notes.create_notes
     - notes.create_midi
     - analysis.detect_key
-    - analysis.find_harmonies_bass
-    - analysis.find_harmonies_seq
+    # - analysis.find_harmonies_bass
+    # - analysis.find_harmonies_seq
+    - analysis.plot_note_frequencies
+    - analysis.find_last_chords
   config:
     label_distance: 1
     inner_radius: 1.7

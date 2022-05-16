@@ -2,6 +2,8 @@ import music21
 import pandas as pd
 import numpy as np
 import cv2
+import os
+import matplotlib.pyplot as plt
 from musicbox.helpers import make_color_image, midi_to_notes
 from datetime import datetime
 
@@ -116,7 +118,7 @@ def _find_simultaneous_notes(note_id, data_array, include_previous = False, incl
         conditions = conditions | (data_array["end_time"].between(start_time, end_time, inclusive = "both"))
 
     if include_wider:
-        conditions = conditions | ((data_array["start_time"] >= start_time) & (data_array["end_time"] <= end_time))
+        conditions = conditions | ((data_array["start_time"] <= start_time) & (data_array["end_time"] >= end_time))
     
     sim_notes = data_array[conditions]
 
@@ -172,7 +174,7 @@ def _format_chord(notes_df, as_midi = False):
 
     return chord_str
 
-def _make_chord_image(data_array, proc, chord_names, filename):
+def _make_chord_image(data_array, proc, filename, chord_names = None):
     base_image = proc.labels.copy().astype(np.uint16)
 
     unassigned_color = data_array["chord_id"].max() + 1
@@ -182,12 +184,19 @@ def _make_chord_image(data_array, proc, chord_names, filename):
     for idx, row in data_array.iterrows():
         base_image[base_image == idx] = row.chord_id
 
-    cv2.putText(base_image, "Unassigned", (proc.center_x, proc.center_y), cv2.FONT_HERSHEY_COMPLEX, 2, unassigned_color, 1)
+    x_start = 100
+    y_coord = 100
+    for chord_id in data_array["chord_id"].unique():
+        if chord_names is not None and chord_id in chord_names:
+            text = chord_names[chord_id]
 
-    # if (idx < len(chord_names)):
-    #     y_coord, x_coord = np.argwhere(row.chord_id == base_image).max(axis = 0)
-    #     text = chord_names[idx]
-    #     cv2.putText(base_image, text, (x_coord, y_coord), cv2.FONT_HERSHEY_COMPLEX, 2, row.chord_id, 2 )
+            for i, line in enumerate(text.split("\n")):
+                y_actual = y_coord + i * 100
+                cv2.putText(base_image, line, (x_start, y_actual), cv2.FONT_HERSHEY_COMPLEX, 2, chord_id, 2 )
+
+            x_start = x_start + 500
+
+    cv2.putText(base_image, "Unassigned", (proc.center_x, proc.center_y), cv2.FONT_HERSHEY_COMPLEX, 2, unassigned_color, 1)
 
     image = make_color_image(base_image)
     cv2.imwrite(filename + ".tiff", image)
@@ -196,3 +205,129 @@ def _make_chord_image(data_array, proc, chord_names, filename):
 def _chords_to_file(chords, filename):
     with open(filename + ".txt", "w") as f:
         f.writelines(f'{chord}\n' for chord in chords)
+
+def plot_note_frequencies(proc):
+    plt.ioff()
+
+    print("hi!")
+
+    tone_map = midi_to_notes()
+    data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
+    data = data.astype({"note_id": int, "midi_note": int})
+    data = data.set_index("note_id")
+
+    data_notes = data.replace({"midi_note": tone_map})
+    
+    data_notes_count = data.groupby(["midi_note"])["midi_note"].count()
+    # We can do this or not, need to get feedback
+    # We might also want to use only notes available to the specific disc?
+    data_notes_count = data_notes_count.reindex(list(range(data_notes_count.index.min(), data_notes_count.index.max() + 1)), fill_value = 0)
+    # Better or worse? Don't know, we'll see
+    data_notes_count = data_notes_count.rename(index = tone_map)
+    positions = np.arange(len(data_notes_count))
+    figure = plt.figure(figsize = (16, 5))
+    plt.bar(positions, data_notes_count, align = "center", alpha = 0.5)
+    plt.xticks(positions, data_notes_count.index)
+    plt.ylabel("Anzahl")
+    plt.title("Notenhäufigkeit")
+    plt.savefig(os.path.join(proc.parameters["debug_dir"], "notes_frequency.png"))
+    plt.close()
+
+    data_note_lengths = data.groupby(["midi_note"])["duration"].sum()
+    # Same things as before
+    data_note_lengths = data_note_lengths.reindex(list(range(data_note_lengths.index.min(), data_note_lengths.index.max() + 1)), fill_value = 0)
+    data_note_lengths = data_note_lengths.rename(index = tone_map)
+    positions = np.arange(len(data_note_lengths))
+    figure = plt.figure(figsize = (16, 5))
+    plt.bar(positions, data_note_lengths, align = "center", alpha = 0.5)
+    plt.xticks(positions, data_note_lengths.index)
+    plt.ylabel("Anzahl")
+    plt.title("Notenlänge")
+    plt.savefig(os.path.join(proc.parameters["debug_dir"], "notes_duration.png"))
+
+    # Now we do the same thing but we dont care about the octave
+
+    midi_to_note = {
+        0: "C",
+        1: "C#",
+        2: "D",
+        3: "D#",
+        4: "E",
+        5: "F",
+        6: "F#",
+        7: "G",
+        8: "G#",
+        9: "A",
+        10: "Bb",
+        11: "B"
+    }
+
+    data_base_notes = data.copy()
+    data_base_notes["midi_note"] = [tone % 12 for tone in data_base_notes["midi_note"].tolist()]
+
+    base_note_count = data_base_notes.groupby(["midi_note"])["midi_note"].count()
+    # We can do this or not, need to get feedback
+    # We might also want to use only notes available to the specific disc?
+    base_note_count = base_note_count.reindex(list(range(0, 11)), fill_value = 0)
+    # Better or worse? Don't know, we'll see
+    base_note_count = base_note_count.rename(index = midi_to_note)
+    positions = np.arange(len(base_note_count))
+    figure = plt.figure(figsize = (8, 5))
+    plt.bar(positions, base_note_count, align = "center", alpha = 0.5)
+    plt.xticks(positions, base_note_count.index)
+    plt.ylabel("Anzahl")
+    plt.title("Notenhäufigkeit (ohne Oktaven)")
+    plt.savefig(os.path.join(proc.parameters["debug_dir"], "base_note_frequencies.png"))
+
+    base_note_count = data_base_notes.groupby(["midi_note"])["duration"].sum()
+    # We can do this or not, need to get feedback
+    # We might also want to use only notes available to the specific disc?
+    base_note_count = base_note_count.reindex(list(range(0, 11)), fill_value = 0)
+    # Better or worse? Don't know, we'll see
+    base_note_count = base_note_count.rename(index = midi_to_note)
+    positions = np.arange(len(base_note_count))
+    figure = plt.figure(figsize = (8, 5))
+    plt.bar(positions, base_note_count, align = "center", alpha = 0.5)
+    plt.xticks(positions, base_note_count.index)
+    plt.ylabel("Anzahl")
+    plt.title("Notenlänge (ohne Oktaven)")
+    plt.savefig(os.path.join(proc.parameters["debug_dir"], "base_note_durations.png"))
+
+def find_last_chords(proc):
+    n = 2
+
+    data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
+    data = data.astype({"note_id": int, "midi_note": int})
+    data = data.set_index("note_id")
+    data["end_time"] = data["start_time"] + data["duration"]
+    data["chord_id"] = pd.Series(dtype = "int")
+
+    chord_names = dict()
+
+    i = 0
+    while i < n:
+        note_id = data[data["chord_id"].isna()]["start_time"].idxmax()
+        note_start = data.loc[[note_id]]["start_time"].iloc[0]
+        
+        chunk = data[(data["start_time"].between(note_start - 0.5, note_start + 0.5)) & (data["chord_id"].isna())]
+
+        chord = _find_simultaneous_notes(note_id, data, True, True)
+        # Or we might just want to do
+        # chord = chunk
+        
+        if (chord.shape[0] > 2):
+            i = i + 1
+            data.loc[chunk.index, "chord_id"] = i
+            chord_names[i] = _format_chord(chord, False)
+            # Generate chord name here
+        else:
+            data.loc[chunk.index, "chord_id"] = -1
+
+    data[data["chord_id"] == -1] = np.nan
+    _make_chord_image(data, proc, os.path.join(proc.parameters["debug_dir"], "last_chords"), chord_names)
+
+
+
+
+
+    
