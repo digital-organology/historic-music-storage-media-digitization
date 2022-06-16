@@ -12,6 +12,9 @@ def detect_key(proc):
     score = music21.converter.parse(proc.midi_filename)
     key = score.analyze('key')
     proc.key = key
+    write_to = open("keys.txt", "a")
+    write_to.write(f"{key.tonic.name} {key.mode}\n")
+    write_to.close()
     print("INFO: Key detected is " + key.tonic.name + " " + key.mode)
 
 def find_harmonies_bass(proc):
@@ -228,8 +231,8 @@ def plot_note_frequencies(proc):
     figure = plt.figure(figsize = (16, 5))
     plt.bar(positions, data_notes_count, align = "center", alpha = 0.5)
     plt.xticks(positions, data_notes_count.index)
-    plt.ylabel("Anzahl")
-    plt.title("Notenhäufigkeit")
+    plt.ylabel("Frequency")
+    # plt.title("Notenhäufigkeit")
     plt.savefig(os.path.join(proc.parameters["debug_dir"], "notes_frequency.png"))
     plt.close()
 
@@ -244,6 +247,7 @@ def plot_note_frequencies(proc):
     plt.ylabel("Anzahl")
     plt.title("Notenlänge")
     plt.savefig(os.path.join(proc.parameters["debug_dir"], "notes_duration.png"))
+    plt.close()
 
     # Now we do the same thing but we dont care about the octave
 
@@ -268,7 +272,7 @@ def plot_note_frequencies(proc):
     base_note_count = data_base_notes.groupby(["midi_note"])["midi_note"].count()
     # We can do this or not, need to get feedback
     # We might also want to use only notes available to the specific disc?
-    base_note_count = base_note_count.reindex(list(range(0, 11)), fill_value = 0)
+    base_note_count = base_note_count.reindex(list(range(0, 12)), fill_value = 0)
     # Better or worse? Don't know, we'll see
     base_note_count = base_note_count.rename(index = midi_to_note)
     positions = np.arange(len(base_note_count))
@@ -276,13 +280,14 @@ def plot_note_frequencies(proc):
     plt.bar(positions, base_note_count, align = "center", alpha = 0.5)
     plt.xticks(positions, base_note_count.index)
     plt.ylabel("Anzahl")
-    plt.title("Notenhäufigkeit (ohne Oktaven)")
+    plt.title("Notefrequency (ohne Oktaven)")
     plt.savefig(os.path.join(proc.parameters["debug_dir"], "base_note_frequencies.png"))
+    plt.close()
 
     base_note_count = data_base_notes.groupby(["midi_note"])["duration"].sum()
     # We can do this or not, need to get feedback
     # We might also want to use only notes available to the specific disc?
-    base_note_count = base_note_count.reindex(list(range(0, 11)), fill_value = 0)
+    base_note_count = base_note_count.reindex(list(range(0, 12)), fill_value = 0)
     # Better or worse? Don't know, we'll see
     base_note_count = base_note_count.rename(index = midi_to_note)
     positions = np.arange(len(base_note_count))
@@ -292,6 +297,7 @@ def plot_note_frequencies(proc):
     plt.ylabel("Anzahl")
     plt.title("Notenlänge (ohne Oktaven)")
     plt.savefig(os.path.join(proc.parameters["debug_dir"], "base_note_durations.png"))
+    plt.close()
 
 def find_last_chords(proc):
     n = 2
@@ -326,8 +332,46 @@ def find_last_chords(proc):
     data[data["chord_id"] == -1] = np.nan
     _make_chord_image(data, proc, os.path.join(proc.parameters["debug_dir"], "last_chords"), chord_names)
 
+def make_streamplot(proc):
+    time = [0,30,60,90,120,150,180,210,240,270,300,330,360]
+    labels = list(range(1, len(time)))
+    data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
 
+    data["bin"] = pd.cut(data.start_time, bins = time, labels=labels)
 
+    midi_to_note = {
+        0: "C",
+        1: "C#",
+        2: "D",
+        3: "D#",
+        4: "E",
+        5: "F",
+        6: "F#",
+        7: "G",
+        8: "G#",
+        9: "A",
+        10: "Bb",
+        11: "B"
+    }
 
+    data["midi_note"] = [midi_to_note[tone % 12] for tone in data["midi_note"].tolist()]
 
+    data = data.groupby(["midi_note", "bin"])
     
+    size = data.size()
+
+    freq_by_note = {}
+
+    for note in size.index.get_level_values(0).unique().tolist():
+        freq_by_note[note] = size[note].tolist()
+
+
+    plt.ioff()
+    fig, ax = plt.subplots()
+    ax.stackplot(time[:-1], freq_by_note.values(),
+                labels=freq_by_note.keys(), alpha=0.8)
+    ax.legend(loc='upper right')
+    ax.set_xlabel('Disc Part')
+    ax.set_ylabel('Note Frequency')
+    plt.savefig(os.path.join(proc.parameters["debug_dir"], "streamplot.png"))
+    plt.close()

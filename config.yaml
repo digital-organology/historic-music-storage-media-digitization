@@ -71,6 +71,7 @@ ariston_lsq:
     # - analysis.find_harmonies_seq
     - analysis.plot_note_frequencies
     - analysis.find_last_chords
+    - analysis.make_streamplot
   config:
     label_distance: 1
     inner_radius: 1.7
