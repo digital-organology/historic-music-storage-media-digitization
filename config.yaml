@@ -52,6 +52,258 @@ ariston_iterative:
       22: 83
       23: 85
       24: 86
+phonola_solodant:
+  pipeline:
+    - preprocessing.binarization
+    - preprocessing.edge_in
+    - preprocessing.crop_to_contents
+    - image.labeling
+    - image.extract_shapes
+    - image.extract_roll_notes
+    - notes.create_midi
+  config:
+    label_distance: 1
+    width: 296
+    bpm: 200
+    # Just here till i fix the configuration validator
+    track_mappings: []
+    track_measurements:
+      - left: 4
+        right: 6.5
+        tone: 29
+      - left: 7.5
+        right: 10
+        tone: 31
+      - left: 11
+        right: 13.5
+        tone: 32
+      - left: 15
+        right: 17.5
+        tone: 33
+      - left: 18.5
+        right: 21
+        tone: 34
+      - left: 23
+        right: 25.5
+        tone: 35
+      - left: 26.5
+        right: 29
+        tone: 36
+      - left: 30
+        right: 32.5
+        tone: 37
+      - left: 34
+        right: 36.5
+        tone: 38
+      - left: 37.5
+        right: 40.5
+        tone: 39
+      - left: 41.5
+        right: 44
+        tone: 40
+      - left: 45
+        right: 47.5
+        tone: 41
+      - left: 48.5
+        right: 51.5
+        tone: 42
+      - left: 52.5
+        right: 55
+        tone: 43
+      - left: 56
+        right: 59
+        tone: 44
+      - left: 60
+        right: 62.5
+        tone: 45
+      - left: 63.5
+        right: 66.5
+        tone: 46
+      - left: 67.5
+        right: 70
+        tone: 47
+      - left: 71
+        right: 73.5
+        tone: 48
+      - left: 74.5
+        right: 77.5
+        tone: 49
+      - left: 78.5
+        right: 81
+        tone: 50
+      - left: 82
+        right: 85
+        tone: 51
+      - left: 86
+        right: 88.5
+        tone: 52
+      - left: 90
+        right: 92.5
+        tone: 53
+      - left: 93.5
+        right: 96
+        tone: 54
+      - left: 97.5
+        right: 100
+        tone: 55
+      - left: 101
+        right: 102.5
+        tone: 56
+      - left: 105
+        right: 107.5
+        tone: 57
+      - left: 108.5
+        right: 111
+        tone: 58
+      - left: 112
+        right: 115
+        tone: 59
+      - left: 116
+        right: 118.5
+        tone: 60
+      - left: 120
+        right: 122.5
+        tone: 61
+      - left: 123.5
+        right: 126.5
+        tone: 62
+      - left: 127.5
+        right: 130
+        tone: 63
+      - left: 131.5
+        right: 134
+        tone: -1
+      - left: 135
+        right: 137.5
+        tone: 64
+      - left: 138.5
+        right: 142.5
+        tone: -1
+      - left: 143.5
+        right: 146
+        tone: 65
+      - left: 147
+        right: 150
+        tone: 30
+      - left: 151
+        right: 153.5
+        tone: 66
+      - left: 155
+        right: 157.5
+        tone: -1
+      - left: 158.5
+        right: 161
+        tone: 67
+      - left: 162.5
+        right: 165
+        tone: -1
+      - left: 166
+        right: 168.5
+        tone: 68
+      - left: 170
+        right: 172.5
+        tone: 69
+      - left: 173.5
+        right: 176.5
+        tone: 70
+      - left: 177.5
+        right: 180
+        tone: 71
+      - left: 181
+        right: 184
+        tone: 72
+      - left: 185
+        right: 187.5
+        tone: 73
+      - left: 188.5
+        right: 191
+        tone: 74
+      - left: 192
+        right: 195
+        tone: 75
+      - left: 196.5
+        right: 199
+        tone: 76
+      - left: 200
+        right: 203
+        tone: 77
+      - left: 204
+        right: 206.5
+        tone: 78
+      - left: 208
+        right: 210.5
+        tone: 79
+      - left: 211.5
+        right: 214
+        tone: 80
+      - left: 215.5
+        right: 218
+        tone: 81
+      - left: 219
+        right: 222
+        tone: 82
+      - left: 223
+        right: 225.5
+        tone: 83
+      - left: 226.5
+        right: 229.5
+        tone: 84
+      - left: 230.5
+        right: 233
+        tone: 85
+      - left: 234
+        right: 237
+        tone: 86
+      - left: 238
+        right: 241
+        tone: 87
+      - left: 242
+        right: 244.5
+        tone: 88
+      - left: 245.5
+        right: 247.5
+        tone: 89
+      - left: 249.5
+        right: 252
+        tone: 90
+      - left: 253
+        right: 256
+        tone: 91
+      - left: 257
+        right: 260
+        tone: 92
+      - left: 261
+        right: 263.5
+        tone: 93
+      - left: 264.5
+        right: 267.5
+        tone: 94
+      - left: 268.5
+        right: 271
+        tone: 95
+      - left: 272
+        right: 275
+        tone: 96
+      - left: 276
+        right: 279
+        tone: 97
+      - left: 280
+        right: 282.5
+        tone: 98
+      - left: 283.5
+        right: 286.5
+        tone: 99
+      - left: 287.5
+        right: 290
+        tone: 100
+      - left: 291
+        right: 293
+        tone: 101
+
+        
+          
+        
+      
 ariston_lsq:
   pipeline:
     - preprocessing.binarization

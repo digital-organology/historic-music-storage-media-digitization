@@ -156,5 +156,17 @@ methods:
     suggests:
       - binarization
     parameters: []
-
-  
+  image.extract_roll_notes:
+    requires: 
+      - shapes
+    provides:
+      - notes
+    suggests: []
+    parameters:
+      - width
+      - track_measurements
+  helpers.enter_debug:
+    requires: []
+    provides: []
+    suggests: []
+    parameters: []

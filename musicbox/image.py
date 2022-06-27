@@ -329,3 +329,78 @@ def center_from_cart(coeffs):
     x0, y0 = (c*d - b*f) / den, (a*f - b*d) / den
 
     return (x0, y0)
+
+
+def extract_roll_notes(proc):
+
+    # First of we need to find the edges of the paper
+    # We measure them at the very top and bottom of the image
+    # If they are close enought together we should be fine doing this in one sitting, otherwise we should do it chunkwise
+    # We may want to test a few more points
+
+    first_line = np.nonzero(proc.labels[0,:])[0]
+    last_line = np.nonzero(proc.labels[(proc.labels.shape[0] - 1),:])[0]
+
+    first_line_max_idx = first_line.max()
+    first_line_min_idx = first_line.min()
+
+    last_line_max_idx = last_line.max()
+    last_line_min_idx = last_line.min()
+
+    min_diff = abs(first_line_min_idx - last_line_min_idx)
+    max_diff = abs(first_line_max_idx - last_line_max_idx)
+
+    if min_diff > 5 or max_diff > 5:
+        # oops
+        pass
+
+    left_border_id = proc.labels[0,first_line_min_idx]
+    right_border_id = proc.labels[0, first_line_max_idx]
+
+    # We prepare the configuration data we need
+
+    # Scaling factor from our images to mm
+    # We can multiply pixel distances by this factor to get to mm
+
+    scaling_factor =  proc.parameters["width"] / (first_line_max_idx - first_line_min_idx)
+
+    # Offset before the roll begins on the left
+
+    offset = first_line_min_idx
+
+    measurements = np.array([list(v.values()) for v in proc.parameters["track_measurements"]])
+    centers = (measurements[:,1] - measurements[:,0]) / 2 + measurements[:,0]
+    notes = list()
+
+    for id, shape in proc.shapes.items():
+        # Will use a dedicated filtering method in the future
+        if id == left_border_id or id == right_border_id:
+            continue
+
+        # We calculate the vertical height
+
+        height = shape[:,0].max() - shape[:,0].min()
+
+        # We first check if the shape completely fits into a track on the roll
+        # Gentle reminder to myself that the coordinates are y, x
+
+        exact_fit = measurements[(measurements[:,0] <= round((shape[:,1].min() * scaling_factor) * 2) / 2) & (measurements[:,1] >= round((shape[:,1].max() * scaling_factor) * 2) / 2)]
+
+        if exact_fit.shape[0] == 1:
+            note = np.array([id, shape[:,0].min(), height, exact_fit[0,2]])
+            notes.append(note)
+
+        # If we couldnt fit the note exactly we choose track with the closest center
+
+        shape_center = ((shape[:,1].max() - shape[:,1].min()) / 2 + shape[:,1].min()) * scaling_factor
+
+        idx = (np.abs(centers - shape_center)).argmin()
+
+        if abs(shape_center - centers[idx]) > 2:
+            # This went wrong
+            continue
+
+        note = np.array([id, shape[:,0].min(), height, measurements[idx,2]])
+        notes.append(note)
+
+    proc.note_data = np.array(notes)

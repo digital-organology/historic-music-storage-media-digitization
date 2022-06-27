@@ -44,7 +44,7 @@ def make_color_image(img):
 
 def plot_polygon(pic, polygon):
     bg_image = np.zeros_like(pic).astype(np.uint8)
-    bg_image[polygon[:,1], polygon[:,0]] = 1
+    bg_image[polygon[:,0], polygon[:,1]] = 1
     plt.imshow(bg_image)
     plt.show()
 
@@ -159,3 +159,7 @@ def midi_to_notes():
     stream = pkgutil.get_data(__name__, "data/midi_notes.csv")
     reader = csv.reader(stream.decode("utf-8").splitlines(), delimiter = ",")
     return {int(row[0]):row[1] for row in reader}
+
+def enter_debug(proc):
+    # Here as an debug entry point
+    pass

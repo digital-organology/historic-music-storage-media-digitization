@@ -228,10 +228,21 @@ def _convert_track_degree(data_array, tracks_to_notes, proc, debug_dir = ""):
     return (start_time, duration, pitch)
 
 def create_midi(proc):
-    data_array = np.c_[list(proc.assignments.values()), proc.note_data]
 
-    # At this point data_array contains track, shape_id, min_angle (end), max_angle (start), diff (length)
-    start_time, duration, pitch = _convert_track_degree(data_array, proc.parameters["track_mappings"], proc, proc.parameters["debug_dir"] if "debug_dir" in proc.parameters.keys() else "")
+    # This way for paper plates
+    if "track_measurements" in proc.parameters:
+        note_data = proc.note_data[(proc.note_data[:,3] > -1) & (proc.note_data[:,2] > 0)].astype(int)
+        start_time = note_data[:,1]
+        duration = note_data[:,2]
+        pitch =  note_data[:,3]
+    else:
+        print("ooopise")
+        data_array = np.c_[list(proc.assignments.values()), proc.note_data]
+
+        # At this point data_array contains track, shape_id, min_angle (end), max_angle (start), diff (length)
+        start_time, duration, pitch = _convert_track_degree(data_array, proc.parameters["track_mappings"], proc, proc.parameters["debug_dir"] if "debug_dir" in proc.parameters.keys() else "")
+
+
     midi_obj = MIDIFile(numTracks=1,
                 removeDuplicates=False,  # set True?
                 deinterleave=True,  # default

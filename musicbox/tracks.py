@@ -84,7 +84,7 @@ def mean_shift(proc):
 
     return True
 
-def correct_empty(proc):
+def correct_empty_legacy(proc):
 
     # data_array = np.column_stack((shape_ids, classes, inner_distances))
 
@@ -112,3 +112,33 @@ def correct_empty(proc):
 
     proc.assignments = dict(zip(copy[:,0], copy[:,1]))
     return True
+
+def correct_empty(proc):
+    mean_dists = proc.track_distances.copy()
+    mean_dists = np.insert(mean_dists, 0, np.array((0, proc.parameters["first_track"])), 0)
+
+    track_dists = np.diff(mean_dists, axis=0)
+    track_dists = np.column_stack((mean_dists[:,0], np.append(0, track_dists[:,1])))
+    m_track_width = np.median(track_dists, axis = 0)[1]
+
+    while np.max(mean_dists, axis = 0)[0] < proc.parameters["n_tracks"]:
+        max_row_idx = np.argmax(track_dists, axis = 0)[1]
+        max_row = track_dists[max_row_idx]
+
+        if round((max_row[1] - m_track_width) / m_track_width) < 1:
+            break
+        
+        track_dists[max_row_idx][1] = max_row[1] - m_track_width
+
+        # Increment all rows after this one up
+
+        for i in range(max_row_idx, len(track_dists)):
+            track_dists[i][0] = track_dists[i][0] + 1
+
+    assignments = np.array(list(proc.assignments.items()))
+    copy = assignments.copy()
+
+    for track in np.unique(assignments[:,1]):
+        copy[:,1][assignments[:,1] == track] = track_dists[int(track), 0]
+    return True
+
