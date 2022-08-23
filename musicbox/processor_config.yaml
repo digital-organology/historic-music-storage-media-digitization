@@ -170,3 +170,22 @@ methods:
     provides: []
     suggests: []
     parameters: []
+  image.classify_shapes:
+    requires:
+      - shapes
+    provides: []
+    suggests: []
+    parameters: []
+  preprocessing.trim_roll_ends:
+    requires:
+      - binarization
+    provides: []
+    suggests: []
+    parameters: []
+  notes.scale_fixed_factor:
+    requires:
+      - notes
+    provides: []
+    suggests: []
+    parameters: 
+      - scale_factor

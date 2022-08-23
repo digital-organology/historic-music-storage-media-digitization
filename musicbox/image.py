@@ -5,6 +5,9 @@ import timeit
 import math
 from skimage import measure
 from musicbox.helpers import gen_lut, make_color_image
+from scipy import optimize
+import circle_fit as cf
+
 
 ## Center iterative
 
@@ -404,3 +407,35 @@ def extract_roll_notes(proc):
         notes.append(note)
 
     proc.note_data = np.array(notes)
+
+
+def classify_shapes(proc):
+
+    x = np.r_[  9, 35, -13,  10,  23,   0]
+    y = np.r_[ 34, 10,   6, -14,  27, -10]
+
+    # coordinates of the barycenter
+    x_m = np.mean(x)
+    y_m = np.mean(y)
+
+
+
+    def calc_R(xc, yc):
+        """ calculate the distance of each 2D points from the center (xc, yc) """
+        return np.sqrt((x-xc)**2 + (y-yc)**2)
+
+    def f_2(c):
+        """ calculate the algebraic distance between the data points and the mean circle centered at c=(xc, yc) """
+        Ri = calc_R(*c)
+        return Ri - Ri.mean()
+
+
+    
+
+    center_estimate = x_m, y_m
+    center_2, ier = optimize.leastsq(f_2, center_estimate)
+
+    xc_2, yc_2 = center_2
+    Ri_2       = calc_R(*center_2)
+    R_2        = Ri_2.mean()
+    residu_2   = sum((Ri_2 - R_2)**2)

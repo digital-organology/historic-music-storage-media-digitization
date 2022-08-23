@@ -55,16 +55,20 @@ ariston_iterative:
 phonola_solodant:
   pipeline:
     - preprocessing.binarization
+    - preprocessing.trim_roll_ends
     - preprocessing.edge_in
     - preprocessing.crop_to_contents
     - image.labeling
     - image.extract_shapes
+    # - image.classify_shapes
     - image.extract_roll_notes
+    - notes.scale_fixed_factor
     - notes.create_midi
   config:
     label_distance: 1
     width: 296
     bpm: 200
+    scale_factor: 0.2
     # Just here till i fix the configuration validator
     track_mappings: []
     track_measurements:
@@ -315,7 +319,7 @@ ariston_lsq:
     - shapes.find_disc_edges
     - shapes.filter_inner
     - tracks.mean_shift
-    - tracks.correct_empty
+    - tracks.correct_empty_legacy
     - notes.create_notes
     - notes.create_midi
     - analysis.detect_key

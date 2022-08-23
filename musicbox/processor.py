@@ -100,7 +100,7 @@ class Processor(object):
             processor: An instance of the processor class containing the given parameters
         """
         if not isinstance(path, str):
-            raise TypeError("data_array must be a ndarray")
+            raise TypeError("path must be a string")
         if not isinstance(config, dict):
             raise TypeError("config must be a dictionary")
         img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)

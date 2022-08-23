@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from itertools import groupby
 
 def binarization(proc):
     _, img_threshold = cv2.threshold(proc.current_image, 60, 255, cv2.THRESH_BINARY)
@@ -18,6 +19,8 @@ def edge_in(proc):
 
     proc.current_image = edges
 
+    return True
+
 def crop_to_contents(proc):
     y_values, x_values = np.nonzero(proc.current_image)
 
@@ -28,5 +31,22 @@ def crop_to_contents(proc):
     x_max = x_values.max() + 20 if x_values.max() + 20 <= proc.current_image.shape[1] - 1 else proc.current_image.shape[1] - 1
 
     proc.current_image = proc.current_image[y_min:y_max, x_min:x_max]
+
+    return True
+
+def trim_roll_ends(proc):
+    # Count number of filled pixels per line
+    counts = (proc.current_image == 1).sum(axis = 1)
+
+    # Find all lines where more than 80% of the pixels are 1
+    threshold = proc.current_image.shape[1] * 0.8
+    bin_count = (counts > threshold).astype(np.uint8)
+
+    # Find the longest sequence of these lines
+    idx_pairs = np.where(np.diff(np.hstack(([False],bin_count==1,[False]))))[0].reshape(-1,2)
+    bounds = idx_pairs[np.diff(idx_pairs,axis=1).argmax(),:]
+
+    # Trim the image
+    proc.current_image = proc.current_image[bounds[0]:bounds[1], :]
 
     return True

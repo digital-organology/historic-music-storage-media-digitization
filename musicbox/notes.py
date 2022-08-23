@@ -279,3 +279,8 @@ def create_midi(proc):
 
     with open(filename, "wb") as output_file:
         midi_obj.writeFile(output_file)
+
+def scale_fixed_factor(proc):
+    print("Hi!")
+
+    return True
