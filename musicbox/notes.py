@@ -231,27 +231,25 @@ def create_midi(proc):
 
     # This way for paper plates
     if "track_measurements" in proc.parameters:
-        note_data = proc.note_data[(proc.note_data[:,3] > -1) & (proc.note_data[:,2] > 0)].astype(int)
+        if "debug_dir" in proc.parameters:
+            np.savetxt(os.path.join(proc.parameters["debug_dir"], "note_data.txt"), proc.note_data, delimiter = ",", fmt = "%.4f")
+
+        note_data = proc.note_data[(proc.note_data[:,3] > -1) & (proc.note_data[:,2] > 0)]
         start_time = note_data[:,1]
         duration = note_data[:,2]
-        pitch =  note_data[:,3]
+
+        # Currently required for technical reasons
+        # duration = np.round(duration * 4) / 4
+        # duration 
+        pitch =  note_data[:,3].astype(int)
     else:
-        print("ooopise")
         data_array = np.c_[list(proc.assignments.values()), proc.note_data]
 
         # At this point data_array contains track, shape_id, min_angle (end), max_angle (start), diff (length)
         start_time, duration, pitch = _convert_track_degree(data_array, proc.parameters["track_mappings"], proc, proc.parameters["debug_dir"] if "debug_dir" in proc.parameters.keys() else "")
 
 
-    midi_obj = MIDIFile(numTracks=1,
-                removeDuplicates=False,  # set True?
-                deinterleave=True,  # default
-                adjust_origin=False,
-                # default - if true find earliest event in all tracts and shift events so that time is 0
-                file_format=1,  # default - set tempo track separately
-                ticks_per_quarternote=480,  # 120, 240, 384, 480, and 960 are common values
-                eventtime_is_ticks=False  # default
-                )
+    midi_obj = MIDIFile(1)
 
     midi_obj.addTempo(0, 0, proc.parameters["bpm"])
 
@@ -281,6 +279,58 @@ def create_midi(proc):
         midi_obj.writeFile(output_file)
 
 def scale_fixed_factor(proc):
-    print("Hi!")
+    # The note is scaled to achieve a certain speed of feet of roll per minute
+    # We know the scanning resolution and can thus determine this
+
+    # We calculate the conversion factor from pixels to seconds
+    pixels_per_second = (proc.parameters["feet_per_minute"] * 12 * 300) / 60
+
+    note_data = proc.note_data.copy()
+
+    note_data[:,1] = note_data[:,1] / pixels_per_second
+    note_data[:,2] = note_data[:,2] / pixels_per_second
+
+
+    proc.note_data = note_data
 
     return True
+
+
+def merge_roll_notes(proc):
+    unique_notes = np.unique(proc.note_data[:,3])
+
+    threshold = 1 / proc.parameters["notes_per_second"]
+
+    note_data = []
+
+    for note in unique_notes:
+        print(f"Processing note {note}")
+        data = proc.note_data[np.where(proc.note_data[:,3] == note)]
+        data = data[data[:,1].argsort()]
+
+        distances = np.diff(data[:,1])
+
+        merged_notes = []
+
+        i = 0
+        while i < (data.shape[0] - 2):
+            print(f"Looking at note: {i}")
+            # The note we are currently looking at
+            current_note = data[i,:]
+
+            # Move the iterator to the next note
+            i += 1
+
+            # Check if the distance is smaller than our threshold
+            while distances[i - 1] < threshold and i < len(distances) - 1:
+                print(f"Merging note {i}")
+                # Merge the notes together
+                current_note[2] += distances[i - 1] + data[i,2]
+                # Move the iterator to add the next note if it's close enough
+                i += 1
+
+            merged_notes.append(current_note)
+
+        note_data.extend(merged_notes)
+
+    new_note_data = np.array(note_data)

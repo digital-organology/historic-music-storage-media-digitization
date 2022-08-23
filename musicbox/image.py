@@ -94,10 +94,20 @@ def _score_iteration(proc, candidate_x, candidate_y):
 ## Extract shapes
 
 def extract_shapes(proc):
-    # This is muuuch faster than what we did previously, but there may be even faster ways
-    # some more information might be found here: https://stackoverflow.com/q/30003068/3176892
-    shapes = [np.argwhere(i == proc.labels) for i in np.unique(proc.labels)]
-    proc.shapes = dict(zip(np.unique(proc.labels), shapes))
+    # Most fast ways to do this only work on 1d arrays, so we flatten out the array first and get the indices for each unique element then
+    # after which we stich everything back together to get 2d indices
+
+    labels_flattend = proc.labels.ravel()
+    labels_flattened_sorted = np.argsort(labels_flattend)
+    keys, indices_flattend = np.unique(labels_flattend[labels_flattened_sorted], return_index=True)
+    labels_ndims = np.unravel_index(labels_flattened_sorted, proc.labels.shape)
+    labels_ndims = np.c_[labels_ndims] if proc.labels.ndim > 1 else labels_flattened_sorted
+    indices = np.split(labels_ndims, indices_flattend[1:])
+    proc.shapes = dict(zip(keys, indices))
+
+    # This is now legacy as it takes around 20 to 30 times as long
+    # shapes = [np.argwhere(i == proc.labels) for i in np.unique(proc.labels)]
+    # proc.shapes = dict(zip(np.unique(proc.labels), shapes))
 
     # We could most likely get away with just deleting the first element (as it should always be 0)
     proc.shapes.pop(0, None)
@@ -335,6 +345,68 @@ def center_from_cart(coeffs):
     return (x0, y0)
 
 
+def _process_chunk(proc, start, end):
+    chunk = proc.labels[start:end,:]
+
+    shape_ids = np.unique(chunk)
+
+    shape_ids = np.setdiff1d(shape_ids, np.array([0, proc.roll_edges[0], proc.roll_edges[1]]))
+
+    shapes_in_chunk = {key: proc.shapes[key] for key in shape_ids if key in proc.shapes}
+
+    left_border = np.argwhere(proc.roll_edges[0] == chunk)
+    right_border = np.argwhere(proc.roll_edges[1] == chunk)
+
+    if np.ptp(left_border, axis = 0)[1] > 5 or np.ptp(right_border, axis = 0)[1] > 5:
+        print(f"WARNING: Roll edge deviates more than 5 Pixels in this chunk, notes may not be extracted correctly")
+
+    # We prepare the configuration data we need
+
+    # Scaling factor from our images to mm
+    # We can multiply pixel distances by this factor to get to mm
+
+    left_border_pos = left_border[:,1].min()
+    right_border_pos = right_border[:,1].max()
+    scaling_factor =  proc.parameters["width"] / (right_border_pos - left_border_pos)
+
+    measurements = np.array([list(v.values()) for v in proc.parameters["track_measurements"]])
+    centers = (measurements[:,1] - measurements[:,0]) / 2 + measurements[:,0]
+    notes = list()
+
+    for id, shape in shapes_in_chunk.items():
+        # Will use a dedicated filtering method in the future
+        if id == proc.roll_edges[0] or id == proc.roll_edges[1]:
+            continue
+
+        # We calculate the vertical height
+
+        height = shape[:,0].max() - shape[:,0].min()
+
+        # We first check if the shape completely fits into a track on the roll
+        # Gentle reminder to myself that the coordinates are y, x
+
+        exact_fit = measurements[(measurements[:,0] <= round((shape[:,1].min() * scaling_factor) * 2) / 2) & (measurements[:,1] >= round((shape[:,1].max() * scaling_factor) * 2) / 2)]
+
+        if exact_fit.shape[0] == 1:
+            note = np.array([id, shape[:,0].min(), height, exact_fit[0,2]])
+            notes.append(note)
+
+        # If we couldnt fit the note exactly we choose track with the closest center
+
+        shape_center = ((shape[:,1].max() - shape[:,1].min()) / 2 + shape[:,1].min()) * scaling_factor
+
+        idx = (np.abs(centers - shape_center)).argmin()
+
+        if abs(shape_center - centers[idx]) > 2:
+            # This went wrong
+            continue
+
+        note = np.array([id, shape[:,0].min(), height, measurements[idx,2]])
+        notes.append(note)
+
+    return notes
+
+
 def extract_roll_notes(proc):
     # Notes might warp over their length so we need to calculate the relative positions of each track relative to the position of each note on the roll
     # As using too small steps might cause problems when the rolls are damaged we do this chunkwise
@@ -343,16 +415,30 @@ def extract_roll_notes(proc):
     chunk_beginning = 0
     left_border_id = proc.roll_edges[0]
     right_border_id = proc.roll_edges[1]
+    notes = []
 
-    while chunk_beginning < proc.labels.shape[0]:
-        chunk_end = chunk_beginning + 1000 if chunk_beginning + 1000 <= proc.labels.shape[0] else proc.labels.shape[0]
 
-        while not np.array_equal(np.sort(np.unique(proc.labels[chunk_end,:]), axis = 0), np.sort(np.array([0, left_border_id, right_border_id]), axis = 0)):
-            chunk_end += 5
+    while chunk_beginning < proc.labels.shape[0] - 1:
+        chunk_end = chunk_beginning + 1000
 
-        print(f"Processing Chunk {chunk_beginning} to {chunk_end}")
+        if chunk_end > proc.labels.shape[0] - 1:
+            chunk_end = proc.labels.shape[0] - 1
+        else:
+            while not np.array_equal(np.sort(np.unique(proc.labels[chunk_end,:]), axis = 0), np.sort(np.array([0, left_border_id, right_border_id]), axis = 0)):
+                chunk_end += 5
+                if chunk_end > proc.labels.shape[0] - 1:
+                    chunk_end = proc.labels.shape[0] - 1
+                    break
+
+        print(f"INFO: Processing Chunk from {chunk_beginning} to {chunk_end}")
+
+        notes.extend(_process_chunk(proc, chunk_beginning, chunk_end))
 
         chunk_beginning = chunk_end
+
+
+    proc.note_data = np.array(notes)
+    return True
 
 
     # First of we need to find the edges of the paper
@@ -457,7 +543,7 @@ def filter_roll_shapes(proc):
         # Do a very rough check if this is actually a hole by checking if it is somewhat as wide as it is heigh
         ranges = np.ptp(item, axis = 0)
 
-        if round(ranges[0] / ranges[1]) != 1:
+        if ranges[0] == 0 or ranges[1] == 0 or round(ranges[0] / ranges[1]) < 1 or round(ranges[0] / ranges[1]) > 2:
             continue
 
         shapes_to_keep.append(key)

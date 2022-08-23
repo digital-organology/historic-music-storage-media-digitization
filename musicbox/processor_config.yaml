@@ -4,7 +4,8 @@ methods:
     provides:
       - binarization
     suggests: []
-    parameters: []
+    parameters:
+      - bin_threshold
   preprocessing.edge_in:
     requires:
       - binarization
@@ -189,7 +190,8 @@ methods:
     provides: []
     suggests: []
     parameters: 
-      - scale_factor
+      - dpi
+      - feet_per_minute
   image.filter_roll_shapes:
     requires:
       - shapes
@@ -211,3 +213,10 @@ methods:
     parameters:
       - center_manual_x
       - center_manual_y
+  notes.merge_roll_notes:
+    requires:
+      - notes
+    provides: []
+    suggests: []
+    parameters:
+      - notes_per_second

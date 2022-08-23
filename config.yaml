@@ -65,14 +65,19 @@ phonola_solodant:
     - image.filter_roll_shapes
     - image.extract_roll_notes
     - notes.scale_fixed_factor
+    - notes.merge_roll_notes
     - notes.create_midi
   config:
     label_distance: 1
     width: 296
-    bpm: 200
+    bpm: 65
     scale_factor: 0.2
     # Just here till i fix the configuration validator
     track_mappings: []
+    dpi: 300
+    feet_per_minute: 6.5
+    notes_per_second: 12
+    bin_threshold: 60
     track_measurements:
       - left: 4
         right: 6.5
@@ -341,6 +346,7 @@ ariston_lsq:
     bandwidth: 8
     bass_cutoff: 52
     cutoff: 59
+    bin_threshold: 60
     lookahead: 5
     # Not actually bpm as we don't even know what a beat is...
     # Update: Maybe actually bpm now
