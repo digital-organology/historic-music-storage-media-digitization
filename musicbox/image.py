@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import os
 import timeit
+import random
 import math
 from skimage import measure
 from musicbox.helpers import gen_lut, make_color_image
@@ -335,10 +336,28 @@ def center_from_cart(coeffs):
 
 
 def extract_roll_notes(proc):
+    # Notes might warp over their length so we need to calculate the relative positions of each track relative to the position of each note on the roll
+    # As using too small steps might cause problems when the rolls are damaged we do this chunkwise
+    # We process chunks of about 1000 pixels, looking for good points to break chunks by finding rows in out data without any hole
+
+    chunk_beginning = 0
+    left_border_id = proc.roll_edges[0]
+    right_border_id = proc.roll_edges[1]
+
+    while chunk_beginning < proc.labels.shape[0]:
+        chunk_end = chunk_beginning + 1000 if chunk_beginning + 1000 <= proc.labels.shape[0] else proc.labels.shape[0]
+
+        while not np.array_equal(np.sort(np.unique(proc.labels[chunk_end,:]), axis = 0), np.sort(np.array([0, left_border_id, right_border_id]), axis = 0)):
+            chunk_end += 5
+
+        print(f"Processing Chunk {chunk_beginning} to {chunk_end}")
+
+        chunk_beginning = chunk_end
+
 
     # First of we need to find the edges of the paper
     # We measure them at the very top and bottom of the image
-    # If they are close enought together we should be fine doing this in one sitting, otherwise we should do it chunkwise
+    # If they are close enough together we should be fine doing this in one sitting, otherwise we should do it chunkwise
     # We may want to test a few more points
 
     first_line = np.nonzero(proc.labels[0,:])[0]
@@ -408,6 +427,84 @@ def extract_roll_notes(proc):
 
     proc.note_data = np.array(notes)
 
+def filter_roll_shapes(proc):
+
+    shapes_to_keep = []
+
+    pixel_count = []
+
+    # Calculate the mean pixel number over all shapes
+    for key, item in proc.shapes.items():
+        if item.shape[0] > proc.current_image.shape[0]:
+            # this is most likely an edge of the roll
+            continue
+
+        pixel_count.append(len(item))
+        
+    mean_pixels = np.mean(pixel_count)
+
+    # Actually filtering the shapes
+    for key, item in proc.shapes.items():
+        if item.shape[0] > proc.current_image.shape[0]:
+            # this is most likely an edge of the roll
+            shapes_to_keep.append(key)
+            continue
+
+        # All shapes with less pixels than the mean are most likely either artifacts or control holes which we do not use currently
+        if len(item) < mean_pixels:
+            continue
+
+        # Do a very rough check if this is actually a hole by checking if it is somewhat as wide as it is heigh
+        ranges = np.ptp(item, axis = 0)
+
+        if round(ranges[0] / ranges[1]) != 1:
+            continue
+
+        shapes_to_keep.append(key)
+
+    filtered_shapes = { key_to_keep: proc.shapes[key_to_keep] for key_to_keep in shapes_to_keep}
+
+    proc.shapes = filtered_shapes
+
+    return True
+
+def find_roll_edges(proc):
+    # To find the edges we test a number of points and find the labels that are on that line
+    # The ones most often present should be our edges
+    # We then only need to check which is which
+
+    labels = []
+
+    lines = random.sample(range(0, proc.labels.shape[0]), 100)
+    for line in lines:
+        labels_on_line = np.unique(proc.labels[line,:])
+        labels.extend(labels_on_line)
+
+    idx, count = np.unique(labels, return_counts = True)
+
+    edge_ids = []
+
+    while len(edge_ids) < 2:
+        edge_id = idx[np.argmax(count)]
+
+        if edge_id != 0:
+            edge_ids.append(edge_id)
+        
+        idx = np.delete(idx, np.argmax(count), 0)
+        count = np.delete(count, np.argmax(count), 0)
+
+    # Check if we got them the right way
+    if proc.shapes[edge_ids[0]].mean(axis = 0)[1] > proc.shapes[edge_ids[1]].mean(axis = 0)[1]:
+        edge_ids[0], edge_ids[1] = edge_ids[1], edge_ids[0]
+
+    proc.roll_edges = edge_ids
+
+    return True
+
+def center_manual(proc):
+    proc.center_x = proc.parameters["center_manual_x"]
+    proc.center_x = proc.parameters["center_manual_y"]
+    return True
 
 def classify_shapes(proc):
 

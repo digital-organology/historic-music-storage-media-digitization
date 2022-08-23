@@ -159,6 +159,7 @@ methods:
   image.extract_roll_notes:
     requires: 
       - shapes
+      - roll_edges
     provides:
       - notes
     suggests: []
@@ -189,3 +190,24 @@ methods:
     suggests: []
     parameters: 
       - scale_factor
+  image.filter_roll_shapes:
+    requires:
+      - shapes
+    provides: []
+    suggests: []
+    parameters: []
+  image.find_roll_edges:
+    requires:
+      - shapes
+    provides:
+      - roll_edges
+    suggests: []
+    parameters: []
+  image.center_manual:
+    requires: []
+    provides:
+      - center
+    suggests: []
+    parameters:
+      - center_manual_x
+      - center_manual_y

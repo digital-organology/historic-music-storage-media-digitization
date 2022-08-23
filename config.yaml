@@ -60,7 +60,9 @@ phonola_solodant:
     - preprocessing.crop_to_contents
     - image.labeling
     - image.extract_shapes
+    - image.find_roll_edges
     # - image.classify_shapes
+    - image.filter_roll_shapes
     - image.extract_roll_notes
     - notes.scale_fixed_factor
     - notes.create_midi
