@@ -5,12 +5,30 @@ from itertools import groupby
 from musicbox.helpers import make_color_image
 
 def binarization(proc):
+    """Binarizes the input image using threshold binarization
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     _, img_threshold = cv2.threshold(proc.current_image, proc.parameters["bin_threshold"], 255, cv2.THRESH_BINARY)
     img_out = (img_threshold > 0).astype(np.uint8)
     proc.current_image = img_out
     return True
 
 def edge_in(proc):
+    """Applies morphological edge detection to the input image
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     image = (proc.current_image > 0).astype(np.uint8)
 
     kernel = np.ones((3,3), np.uint8)
@@ -26,6 +44,15 @@ def edge_in(proc):
     return True
 
 def crop_to_contents(proc):
+    """Crops the input image to the content present
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     y_values, x_values = np.nonzero(proc.current_image)
 
     y_min = y_values.min() - 20 if y_values.min() - 20 >= 0 else 0
@@ -39,6 +66,15 @@ def crop_to_contents(proc):
     return True
 
 def trim_roll_ends(proc):
+    """Trims an image of a piano roll to remove everything except the area actually containing holes
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     # Count number of filled pixels per line
     counts = (proc.current_image == 1).sum(axis = 1)
 

@@ -8,6 +8,15 @@ import os
 import musicbox.helpers
 
 def mean_shift(proc):
+    """Use meanshift clustering to segment the holes on a disc into tracks
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     # TODO: We could possibly work with the absolute distance to the outer border which would be affected by warping but not by a wrong center
     inner_distances = []
 
@@ -85,6 +94,15 @@ def mean_shift(proc):
     return True
 
 def correct_empty(proc):
+    """Find tracks not populated by any holes to ensure correct track assignments
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     mean_dists = proc.track_distances.copy()
     mean_dists = np.insert(mean_dists, 0, np.array((0, proc.parameters["first_track"])), 0)
 

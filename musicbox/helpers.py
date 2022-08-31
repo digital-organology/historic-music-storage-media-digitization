@@ -9,6 +9,12 @@ from importlib_resources import files, as_file
 from scipy.spatial import distance
 
 def get_lut():
+    """Loads a lut included in the package that can be used to generate a color image out of an 8-Bit image
+
+    Returns:
+        _type_: _description_
+    """
+
     with files(musicbox.data).joinpath("lut.npy").open("rb") as f:
         lut = np.load(f)
 
@@ -25,6 +31,15 @@ def make_image_from_shapes(canvas, shapes):
     return bg_image
 
 def make_color_image(img):
+    """Creates a colored image from an 8-Bit grayscale image
+
+    Args:
+        img (numpy.ndarray): Array of the grayscale image to color
+
+    Returns:
+        numpy.ndarray: Color representation of the provided grayscale image
+    """
+
     lut = get_lut()
 
     color_image = img.astype(np.uint8)

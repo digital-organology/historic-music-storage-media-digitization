@@ -12,6 +12,15 @@ import circle_fit as cf
 ## Extract shapes
 
 def extract_shapes(proc):
+    """Creates arrays of coordinates for each labeled component in the processed image
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     # Most fast ways to do this only work on 1d arrays, so we flatten out the array first and get the indices for each unique element then
     # after which we stich everything back together to get 2d indices
 
@@ -31,6 +40,12 @@ def extract_shapes(proc):
 ## Center
 
 def center_mean(proc):
+    """Calculates the center point of a disc by using the mean of the outer edge
+
+    Args:
+        proc (_type_): _description_
+    """
+
     indices, counts = np.unique(proc.labels, return_counts = True)
     indices = indices[1:]
     counts = counts[1:]
@@ -53,6 +68,12 @@ def center_mean(proc):
     proc.center_x = round(center_x)
 
 def center_least_squares(proc):
+    """Calculated the center point of a disc by fitting an ellipse to the outer edge and finding its center
+
+    Args:
+        proc (_type_): _description_
+    """
+
     # First get the outer border as usual
     indices, counts = np.unique(proc.labels, return_counts = True)
     indices = indices[1:]
@@ -84,6 +105,15 @@ def center_least_squares(proc):
 ## Labeling method
 
 def labeling(proc):
+    """Labels connected components in the image to be processed
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     if proc.parameters["label_distance"] != 1:
         _legacy_label(proc)
         return True
@@ -310,6 +340,15 @@ def _process_chunk(proc, start, end):
 
 
 def extract_roll_notes(proc):
+    """Extracts the notes present on a piano roll to be processed
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """    
+
     # Notes might warp over their length so we need to calculate the relative positions of each track relative to the position of each note on the roll
     # As using too small steps might cause problems when the rolls are damaged we do this chunkwise
     # We process chunks of about 1000 pixels, looking for good points to break chunks by finding rows in out data without any hole
@@ -343,6 +382,14 @@ def extract_roll_notes(proc):
     return True
 
 def filter_roll_shapes(proc):
+    """Filters out the detected components on an piano roll to include only those representing holes
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """    
 
     shapes_to_keep = []
 
@@ -417,6 +464,15 @@ def find_roll_edges(proc):
     return True
 
 def center_manual(proc):
+    """Sets the center point of a disc manually from configuration parameters
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     proc.center_x = proc.parameters["center_manual_x"]
     proc.center_x = proc.parameters["center_manual_y"]
     return True

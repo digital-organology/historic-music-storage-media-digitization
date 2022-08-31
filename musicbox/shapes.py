@@ -7,6 +7,15 @@ import timeit
 import os
 
 def find_disc_edges(proc):
+    """Finds the inner and outer edges of a disc
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     # We need to know what area the label is. The config gives us
     # the relative distance between label and center in relation to the
     # distance between center and disc edge.
@@ -48,6 +57,15 @@ def find_disc_edges(proc):
     return True
 
 def filter_inner(proc):
+    """Filter out all detected components on the area to the inside of the area actually containing tracks
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     # This filters everything that is inside the inner label area.
     
     # We can calculate where the label ends

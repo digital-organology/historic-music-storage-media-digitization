@@ -126,6 +126,15 @@ def _calculate_angles(shape, center_x, center_y, return_points = False):
             return (degs_second, degs_first)
 
 def create_notes(proc):
+    """Finds note duration and timing on a cardboard disc
+
+    Args:
+        proc (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     shapes = proc.shapes.values()
     shape_ids = list(proc.shapes.keys())
     shape_min = []
@@ -203,6 +212,11 @@ def _convert_track_degree(data_array, tracks_to_notes, proc, debug_dir = ""):
     return (start_time, duration, pitch)
 
 def create_midi(proc):
+    """Creates a midi file from previously generated music data
+
+    Args:
+        proc (_type_): _description_
+    """    
 
     # This way for paper plates
     if "track_measurements" in proc.parameters:

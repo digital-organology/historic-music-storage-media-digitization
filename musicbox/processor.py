@@ -16,7 +16,7 @@ import musicbox.analysis
 # This is the main processing class
 
 class Processor(object):
-
+    
     # These attributes hold data required for the actual data processing
     # We do not actually need to declare them here as they can be added dynamically
     # but we do this to create a better overview of what exists

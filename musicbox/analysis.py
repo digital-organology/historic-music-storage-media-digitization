@@ -9,6 +9,11 @@ from datetime import datetime
 
 
 def detect_key(proc):
+    """Detects the key of the generated midi file using the music21 librarys key detection methods
+
+    Args:
+        proc (musicbox.Processor.processor): The processor instance that called the method
+    """    
     score = music21.converter.parse(proc.midi_filename)
     key = score.analyze('key')
     proc.key = key
@@ -18,6 +23,12 @@ def detect_key(proc):
     print("INFO: Key detected is " + key.tonic.name + " " + key.mode)
 
 def find_harmonies_bass(proc):
+    """Finds chords in the processed medium by finding notes sounding concurrently with bass notes
+
+    Args:
+        proc (_type_): _description_
+    """
+
     data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
     data = data.astype({"note_id": int, "midi_note": int})
     data = data.set_index("note_id")
@@ -54,6 +65,12 @@ def find_harmonies_bass(proc):
     _chords_to_file(unique_chords, base_filename)
 
 def find_harmonies_seq(proc):
+    """Finds chords in the processed medium by sequentially walking through all notes and finding the ones that sound concurrently
+
+    Args:
+        proc (_type_): _description_
+    """
+
     data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
     data = data.astype({"note_id": int, "midi_note": int})
     data = data.set_index("note_id")
@@ -177,6 +194,12 @@ def _chords_to_file(chords, filename):
         f.writelines(f'{chord}\n' for chord in chords)
 
 def plot_note_frequencies(proc):
+    """Creates plots of the frequencies and lengths each notes appear in the processed medium
+
+    Args:
+        proc (_type_): _description_
+    """
+
     plt.ioff()
 
     print("hi!")
@@ -267,6 +290,12 @@ def plot_note_frequencies(proc):
     plt.close()
 
 def find_last_chords(proc):
+    """Finds the last sounding chords on the processed medium
+
+    Args:
+        proc (_type_): _description_
+    """    
+
     n = 2
 
     data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
@@ -300,6 +329,12 @@ def find_last_chords(proc):
     _make_chord_image(data, proc, os.path.join(proc.parameters["debug_dir"], "last_chords"), chord_names)
 
 def make_streamplot(proc):
+    """Creates a streamgraph diagram of the processed medium
+
+    Args:
+        proc (_type_): _description_
+    """
+
     time = [0,30,60,90,120,150,180,210,240,270,300,330,360]
     labels = list(range(1, len(time)))
     data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
