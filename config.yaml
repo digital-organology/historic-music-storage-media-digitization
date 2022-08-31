@@ -1,57 +1,3 @@
-ariston_iterative:
-  pipeline:
-    - preprocessing.binarization
-    - preprocessing.edge_in
-    - preprocessing.crop_to_contents
-    - image.labeling
-    - image.center_mean
-    - image.extract_shapes
-    - shapes.find_disc_edges
-    - shapes.filter_inner
-    - image.center_iterative
-    - tracks.mean_shift
-    - tracks.correct_empty
-    - notes.create_notes
-    - notes.find_beat_length
-    - notes.create_midi
-    - analysis.detect_key
-  config:
-    label_distance: 1
-    inner_radius: 1.7
-    outer_radius: 4.5
-    # Average width of each track as relative distance between center and outer border
-    track_width: 0.024 # Original value: 0.02267693
-    first_track: 0.42
-    n_tracks: 24
-    bandwidth: 8
-    bpm: 350 # Not actually bpm as we don't even know what a beat is...
-    angle: 0.5
-    iterations: 300
-    track_mappings:
-      1: 45
-      2: 47
-      3: 50
-      4: 52
-      5: 57
-      6: 59
-      7: 61
-      8: 62
-      9: 64
-      10: 66
-      11: 68
-      12: 69
-      13: 71
-      14: 73
-      15: 74
-      16: 75
-      17: 76
-      18: 78
-      19: 79
-      20: 80
-      21: 81
-      22: 83
-      23: 85
-      24: 86
 phonola_solodant:
   pipeline:
     - preprocessing.binarization
@@ -310,12 +256,7 @@ phonola_solodant:
       - left: 291
         right: 293
         tone: 101
-
-        
-          
-        
-      
-ariston_lsq:
+ariston:
   pipeline:
     - preprocessing.binarization
     - preprocessing.edge_in
@@ -330,8 +271,8 @@ ariston_lsq:
     - notes.create_notes
     - notes.create_midi
     - analysis.detect_key
-    # - analysis.find_harmonies_bass
-    # - analysis.find_harmonies_seq
+    - analysis.find_harmonies_bass
+    - analysis.find_harmonies_seq
     - analysis.plot_note_frequencies
     - analysis.find_last_chords
     - analysis.make_streamplot
@@ -341,7 +282,6 @@ ariston_lsq:
     outer_radius: 4.5
     # Average width of each track as relative distance between center and outer border
     track_width: 0.024 # Original value: 0.02267693
-    first_track: 0.42
     n_tracks: 24
     bandwidth: 8
     bass_cutoff: 52
@@ -376,247 +316,72 @@ ariston_lsq:
       22: 83
       23: 85
       24: 86
-ariston:
+mechanischer_vorsetzer:
   pipeline:
     - preprocessing.binarization
     - preprocessing.edge_in
     - preprocessing.crop_to_contents
     - image.labeling
-    - image.center_mean
+    - image.center_least_squares
     - image.extract_shapes
     - shapes.find_disc_edges
     - shapes.filter_inner
     - tracks.mean_shift
-    - tracks.correct_empty
+    - tracks.correct_empty_legacy
     - notes.create_notes
-    - notes.find_beat_length
     - notes.create_midi
     - analysis.detect_key
+    - analysis.find_harmonies_bass
+    - analysis.find_harmonies_seq
+    - analysis.plot_note_frequencies
+    - analysis.find_last_chords
+    - analysis.make_streamplot
   config:
     label_distance: 1
-    inner_radius: 1.7
-    outer_radius: 4.5
-    # Average width of each track as relative distance between center and outer border
-    track_width: 0.024 # Original value: 0.02267693
-    first_track: 0.42
-    n_tracks: 24
+    inner_radius: 3.5
+    outer_radius: 11.8
+    first_track: 0.325
+    n_tracks: 36
     bandwidth: 8
-    # Not actually bpm as we don't even know what a beat is...
-    # Update: Maybe actually bpm now
+    bass_cutoff: 52
+    cutoff: 59
+    bin_threshold: 60
+    lookahead: 5
     bpm: 90 
     track_mappings:
-      1: 45
-      2: 47
-      3: 50
-      4: 52
-      5: 57
-      6: 59
-      7: 61
-      8: 62
-      9: 64
-      10: 66
-      11: 68
-      12: 69
-      13: 71
-      14: 73
-      15: 74
-      16: 75
-      17: 76
-      18: 78
-      19: 79
-      20: 80
-      21: 81
-      22: 83
-      23: 85
-      24: 86
-
-
-# Old format, needs to be converted as needed:
-
-# mechanischer_vorsetzer:
-#   punchholes: False
-#   # Radius of the inner label, unit does not matter but has to match the one used for outer radius
-#   inner_radius: 3.5
-#   # Radius of the entire disc
-#   outer_radius: 11.8
-#   # Number of beats the disc has
-#   number_beats: 144
-#   # Bandwidth used for meanshift clustering the tracks
-#   bandwidth: 8
-#   # How far to look around each pixel when finding connected components in the image
-#   search_distance: 1
-#   # Average width of each track as relative distance between center and outer border
-#   track_width: 0.01845976
-#   # Relative position of the innnermost track from center to outer border
-#   first_track: 0.325
-#   # Total number of tracks on the disc
-#   n_tracks: 36
-#   # Low threshold for canny algorithm
-#   canny_low: 100
-#   # High threshold
-#   canny_high: 255
-#   # Preprocessing parameters
-#   thresh_binary: 245
-#   erosion_kernel: 3
-#   noise_kernel: 5
-#   brightness: 100
-#   # Mappings of tracks to midi codes
-#   track_mappings:
-#     1: 43
-#     2: 45
-#     3: 47
-#     4: 48
-#     5: 50
-#     6: 52
-#     7: 53
-#     8: 54
-#     9: 55
-#     10: 57
-#     11: 59
-#     12: 60
-#     13: 61
-#     14: 62
-#     15: 63
-#     16: 64
-#     17: 65
-#     18: 66
-#     19: 67
-#     20: 68
-#     21: 69
-#     22: 70
-#     23: 71
-#     24: 72
-#     25: 73
-#     26: 74
-#     27: 75
-#     28: 76
-#     29: 77
-#     30: 78
-#     31: 79
-#     32: 80
-#     33: 81
-#     34: 82
-#     35: 83
-#     36: 84
-# metal:
-#   # Radius of the inner label, unit does not matter but has to match the one used for outer radius
-#   inner_radius: 1.8
-#   # Radius of the entire disc, outer border ~8.4
-#   outer_radius: 8.8
-#   # Number of beats the disc has
-#   number_beats: 144
-#   # Bandwidth used for meanshift clustering the tracks
-#   bandwidth: 4
-#   # How far to look around each pixel when finding connected components in the image
-#   search_distance: 1
-#   # Average width of each track as relative distance between center and outer border
-#   track_width: 0.01190476
-#   # Relative position of the innnermost track from center to outer border = dist_innermostpolygon / outer_border? 
-#   first_track: 0.214
-#   # Total number of tracks on the disc
-#   n_tracks: 94
-#   # Low threshold for canny algorithm
-#   canny_low: 50
-#   # High threshold
-#   canny_high: 255
-#   # Preprocessing parameters
-#   thresh_binary: 200
-#   erosion_kernel: 3
-#   noise_kernel: 5
-#   brightness: 20
-#   # Mappings of tracks to midi codes
-#   track_mappings:
-#     1: 43
-#     2: 45
-#     3: 47
-#     4: 48
-#     5: 50
-#     6: 52
-#     7: 53
-#     8: 54
-#     9: 55
-#     10: 57
-#     11: 59
-#     12: 60
-#     13: 61
-#     14: 62
-#     15: 63
-#     16: 64
-#     17: 65
-#     18: 66
-#     19: 67
-#     20: 68
-#     21: 69
-#     22: 70
-#     23: 71
-#     24: 72
-#     25: 73
-#     26: 74
-#     27: 75
-#     28: 76
-#     29: 77
-#     30: 78
-#     31: 79
-#     32: 80
-#     33: 81
-#     34: 82
-#     35: 83
-#     36: 84
-#     37: 85
-#     38: 85
-#     39: 85
-#     40: 85
-#     41: 85
-#     42: 85
-#     43: 85
-#     44: 85
-#     45: 85
-#     46: 85
-#     47: 85
-#     48: 85
-#     49: 85
-#     50: 85
-#     51: 85
-#     52: 85
-#     53: 85
-#     54: 85
-#     55: 85
-#     56: 85
-#     57: 85
-#     58: 85
-#     59: 85
-#     60: 85
-#     61: 85
-#     62: 85
-#     63: 85
-#     64: 85
-#     65: 85
-#     66: 85
-#     67: 85
-#     68: 85
-#     69: 85
-#     70: 85
-#     71: 85
-#     72: 85
-#     73: 85
-#     74: 85
-#     75: 85
-#     76: 85
-#     77: 85
-#     78: 85
-#     79: 85
-#     80: 85
-#     81: 85
-#     82: 85
-#     83: 85
-#     84: 85
-#     85: 85
-#     86: 85
-#     87: 85
-#     88: 85
-#     89: 85
-#     90: 85
-#     91: 85
-#     92: 85
-#     93: 85
-#     94: 85
+    1: 43
+    2: 45
+    3: 47
+    4: 48
+    5: 50
+    6: 52
+    7: 53
+    8: 54
+    9: 55
+    10: 57
+    11: 59
+    12: 60
+    13: 61
+    14: 62
+    15: 63
+    16: 64
+    17: 65
+    18: 66
+    19: 67
+    20: 68
+    21: 69
+    22: 70
+    23: 71
+    24: 72
+    25: 73
+    26: 74
+    27: 75
+    28: 76
+    29: 77
+    30: 78
+    31: 79
+    32: 80
+    33: 81
+    34: 82
+    35: 83
+    36: 84
