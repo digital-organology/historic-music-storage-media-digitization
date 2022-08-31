@@ -1,7 +1,9 @@
 # Music box disc digitization
 
-This repository contains code to automatically generate a midi file out of a high resolution image of discs for old music boxes.
-The pipeline is highly modular and is to be extended to include processing of other formats of historic music storage media and additional analytic features.
+This repository contains code to automatically generate a midi file out of a high resolution image of historic musical storage media.
+Currently cardboard discs can be processed, configuration files for Ariston type discs as well as ones for an *mechanischer Klaviervorsetzer* are included.
+Processing of piano rolls is currently under development with an experimental pipeline providing support for the Hupfeld Phonola Solodant type of rolls.
+The pipeline is highly modular and is continuously expanded to include processing for a number of types of historic music storage media and additional analytic features.
 This is an in-progress project at the Digital Organology group of the Museum of Musical Instruments at Leipzig University.
 
 ## Prerequisites
@@ -14,6 +16,8 @@ This can be done using PIP:
 pip install -r requirements.txt
 ```
 
+A proper installation routine with `Setuptools` will be provided in the future.
+
 ## Image preprocessing
 
 Currently the script is developed using backlit images of round music box discs like this:
@@ -25,13 +29,13 @@ Depending on the way your images are taken there might be additional preprocessi
 ## Usage
 
 Pipelines are configured in the `config.yaml` file.
-An example pipeline to process a disc for the ariston brand of music box' is included.
+Some example pipelines are already included.
 
-The software can be accesed either directly in python our through our wrapper script.
+The software can be accessed either directly in python our through our wrapper script.
 
 ### Python usage
 
-We expose the `processor` class. It can be used to process a file. An example can be seen in our wrapper file:
+We provide the `processor` class. It can be used to process a file. An example can be seen in our wrapper file:
 
 ```{python}
 with open(args.config, "r") as stream:
