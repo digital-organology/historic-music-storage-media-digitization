@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+import os
 from itertools import groupby
+from musicbox.helpers import make_color_image
 
 def binarization(proc):
     _, img_threshold = cv2.threshold(proc.current_image, proc.parameters["bin_threshold"], 255, cv2.THRESH_BINARY)
@@ -19,6 +21,8 @@ def edge_in(proc):
 
     proc.current_image = edges
 
+    if "debug_dir" in proc.parameters:
+        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "edges.tiff"), make_color_image(edges.copy()))
     return True
 
 def crop_to_contents(proc):
