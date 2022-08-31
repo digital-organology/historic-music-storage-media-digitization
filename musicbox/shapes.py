@@ -90,6 +90,3 @@ def filter_inner(proc):
     proc.shapes = filtered_shapes
 
     return True
-
-def filter_size(proc):
-    pass

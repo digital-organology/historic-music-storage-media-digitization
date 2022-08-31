@@ -8,3 +8,4 @@ midiutil
 matplotlib
 pandas
 pkg_resources
+importlib_resources

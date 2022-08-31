@@ -5,91 +5,9 @@ import timeit
 import random
 import math
 from skimage import measure
-from musicbox.helpers import gen_lut, make_color_image
+from musicbox.helpers import get_lut, make_color_image
 from scipy import optimize
 import circle_fit as cf
-
-
-## Center iterative
-
-def center_iterative(proc):
-    # Create a debug image
-    if "debug_dir" in proc.parameters:
-        debug_image = proc.labels.copy()
-        debug_image = make_color_image(debug_image)
-        debug_image = cv2.circle(debug_image, (proc.center_x, proc.center_y), 2, (255, 255, 0), 2)
-
-    scores = []
-    coords = []
-    candidates = _get_candidate_points(proc)
-    for candidate in candidates:
-        candidate_x, candidate_y = candidate
-        if "debug_dir" in proc.parameters:
-            debug_image = cv2.circle(debug_image, (candidate_x, candidate_y), 2, (255, 0, 0), 2)
-
-        score = _score_iteration(proc, candidate_x, candidate_y)
-        scores.append(score)
-        coords.append((candidate_x, candidate_y))
-
-    max_idx = min(enumerate(scores), key = lambda x: x[1])[0]
-
-    best_x, best_y = coords[max_idx]
-
-    if proc.verbose:
-        print("INFO: Best center found is (" + str(best_y) + ", " + str(best_x) + ")")
-
-    if "debug_dir" in proc.parameters:
-        debug_image = cv2.circle(debug_image, (best_x, best_y), 2, (0, 0, 255), 2)
-        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "spiral.tiff"), debug_image)
-
-    proc.center_x = best_x
-    proc.center_y = best_y
-
-    return True
-
-def _get_candidate_points(proc):
-    if proc.verbose:
-        print("INFO: Testing " + str(proc.parameters["iterations"]) + " poins with an angle of " + str(proc.parameters["angle"] * 10) + " degrees...")
-
-    pos = []
-    base_angle = proc.parameters["angle"]
-    for i in range(0, proc.parameters["iterations"]):
-        angle = base_angle * i
-        x_next = round(proc.center_x + (1 + 1 * angle) * math.cos(1 * angle))
-        y_next = round(proc.center_y + (1 + 1 * angle) * math.sin(1 * angle))
-        pos.append((x_next, y_next))
-    return pos
-
-def _score_iteration(proc, candidate_x, candidate_y):
-    # We adjust the center on the processor and run the track detection
-    proc.center_x = candidate_x
-    proc.center_y = candidate_y
-    
-    # This prevents the mean_shift method to create debug information each time it is called
-    # which accounts for > 50% of its runtime
-
-    was_debug = False
-
-    if "debug_dir" in proc.parameters:
-        was_debug = True
-        debug_dir = proc.parameters.pop("debug_dir")
-
-    proc.execute_method("tracks.mean_shift")
-
-    if was_debug:
-        proc.parameters["debug_dir"] = debug_dir
-
-    # Get the track distances
-
-    data = np.diff(proc.track_distances, n = 1, axis = 0)
-
-    if "debug_dir" in proc.parameters.keys():
-        with open(os.path.join(proc.parameters["debug_dir"], "stat_values_iterative.csv"), "a+") as f:
-            f.write(str(candidate_x) + ", " + str(candidate_y) + ", " + str(np.std(data[:,1])) + ", " + str(np.mean(data[:,1])) + "\n")
-
-    return np.std(data[:,1])
-
-
 
 ## Extract shapes
 
@@ -105,11 +23,7 @@ def extract_shapes(proc):
     indices = np.split(labels_ndims, indices_flattend[1:])
     proc.shapes = dict(zip(keys, indices))
 
-    # This is now legacy as it takes around 20 to 30 times as long
-    # shapes = [np.argwhere(i == proc.labels) for i in np.unique(proc.labels)]
-    # proc.shapes = dict(zip(np.unique(proc.labels), shapes))
-
-    # We could most likely get away with just deleting the first element (as it should always be 0)
+    # We can most likely get away with just deleting the first element (as it should always be 0)
     proc.shapes.pop(0, None)
 
     return True
@@ -182,7 +96,7 @@ def labeling(proc):
         start_time = timeit.default_timer()
 
         # Get color table
-        lut = gen_lut()
+        lut = get_lut()
 
         # Make sure there are at max 256 labels
         color_image = labels.copy().astype(np.uint8)
@@ -225,7 +139,7 @@ def _legacy_label(proc):
         start_time = timeit.default_timer()
 
         # Get color table
-        lut = gen_lut()
+        lut = get_lut()
 
         # Make sure there are at max 256 labels
         labels = img.copy().astype(np.uint8)
@@ -294,21 +208,9 @@ def _process_pixel(img, y, x, distance, y_limit, x_limit, current_shape):
     return current_shape
 
 
-# The following methods are adapted from here: https://scipython.com/blog/direct-linear-least-squares-fitting-of-an-ellipse/
+# The circle fitting method is adapted from here: https://scipython.com/blog/direct-linear-least-squares-fitting-of-an-ellipse/
 
 def fit_ellipse(x, y):
-    """
-
-    Fit the coefficients a,b,c,d,e,f, representing an ellipse described by
-    the formula F(x,y) = ax^2 + bxy + cy^2 + dx + ey + f = 0 to the provided
-    arrays of data points x=[x1, x2, ..., xn] and y=[y1, y2, ..., yn].
-
-    Based on the algorithm of Halir and Flusser, "Numerically stable direct
-    least squares fitting of ellipses'.
-
-
-    """
-
     D1 = np.vstack([x**2, x*y, y**2]).T
     D2 = np.vstack([x, y, np.ones(len(x))]).T
     S1 = D1.T @ D1
@@ -440,79 +342,6 @@ def extract_roll_notes(proc):
     proc.note_data = np.array(notes)
     return True
 
-
-    # First of we need to find the edges of the paper
-    # We measure them at the very top and bottom of the image
-    # If they are close enough together we should be fine doing this in one sitting, otherwise we should do it chunkwise
-    # We may want to test a few more points
-
-    first_line = np.nonzero(proc.labels[0,:])[0]
-    last_line = np.nonzero(proc.labels[(proc.labels.shape[0] - 1),:])[0]
-
-    first_line_max_idx = first_line.max()
-    first_line_min_idx = first_line.min()
-
-    last_line_max_idx = last_line.max()
-    last_line_min_idx = last_line.min()
-
-    min_diff = abs(first_line_min_idx - last_line_min_idx)
-    max_diff = abs(first_line_max_idx - last_line_max_idx)
-
-    if min_diff > 5 or max_diff > 5:
-        # oops
-        pass
-
-    left_border_id = proc.labels[0,first_line_min_idx]
-    right_border_id = proc.labels[0, first_line_max_idx]
-
-    # We prepare the configuration data we need
-
-    # Scaling factor from our images to mm
-    # We can multiply pixel distances by this factor to get to mm
-
-    scaling_factor =  proc.parameters["width"] / (first_line_max_idx - first_line_min_idx)
-
-    # Offset before the roll begins on the left
-
-    offset = first_line_min_idx
-
-    measurements = np.array([list(v.values()) for v in proc.parameters["track_measurements"]])
-    centers = (measurements[:,1] - measurements[:,0]) / 2 + measurements[:,0]
-    notes = list()
-
-    for id, shape in proc.shapes.items():
-        # Will use a dedicated filtering method in the future
-        if id == left_border_id or id == right_border_id:
-            continue
-
-        # We calculate the vertical height
-
-        height = shape[:,0].max() - shape[:,0].min()
-
-        # We first check if the shape completely fits into a track on the roll
-        # Gentle reminder to myself that the coordinates are y, x
-
-        exact_fit = measurements[(measurements[:,0] <= round((shape[:,1].min() * scaling_factor) * 2) / 2) & (measurements[:,1] >= round((shape[:,1].max() * scaling_factor) * 2) / 2)]
-
-        if exact_fit.shape[0] == 1:
-            note = np.array([id, shape[:,0].min(), height, exact_fit[0,2]])
-            notes.append(note)
-
-        # If we couldnt fit the note exactly we choose track with the closest center
-
-        shape_center = ((shape[:,1].max() - shape[:,1].min()) / 2 + shape[:,1].min()) * scaling_factor
-
-        idx = (np.abs(centers - shape_center)).argmin()
-
-        if abs(shape_center - centers[idx]) > 2:
-            # This went wrong
-            continue
-
-        note = np.array([id, shape[:,0].min(), height, measurements[idx,2]])
-        notes.append(note)
-
-    proc.note_data = np.array(notes)
-
 def filter_roll_shapes(proc):
 
     shapes_to_keep = []
@@ -591,34 +420,3 @@ def center_manual(proc):
     proc.center_x = proc.parameters["center_manual_x"]
     proc.center_x = proc.parameters["center_manual_y"]
     return True
-
-def classify_shapes(proc):
-
-    x = np.r_[  9, 35, -13,  10,  23,   0]
-    y = np.r_[ 34, 10,   6, -14,  27, -10]
-
-    # coordinates of the barycenter
-    x_m = np.mean(x)
-    y_m = np.mean(y)
-
-
-
-    def calc_R(xc, yc):
-        """ calculate the distance of each 2D points from the center (xc, yc) """
-        return np.sqrt((x-xc)**2 + (y-yc)**2)
-
-    def f_2(c):
-        """ calculate the algebraic distance between the data points and the mean circle centered at c=(xc, yc) """
-        Ri = calc_R(*c)
-        return Ri - Ri.mean()
-
-
-    
-
-    center_estimate = x_m, y_m
-    center_2, ier = optimize.leastsq(f_2, center_estimate)
-
-    xc_2, yc_2 = center_2
-    Ri_2       = calc_R(*center_2)
-    R_2        = Ri_2.mean()
-    residu_2   = sum((Ri_2 - R_2)**2)

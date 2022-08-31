@@ -9,32 +9,7 @@ from scipy.spatial import distance
 from datetime import datetime
 from sklearn.cluster import KMeans
 from midiutil.MidiFile import MIDIFile
-from musicbox.helpers import gen_lut, make_color_image
-
-
-def find_beat_length(proc):
-    note_length = proc.note_data[:,3]
-    note_length = np.column_stack((note_length, np.zeros(len(note_length))))
-
-    fit = KMeans(4)
-    fit.fit(note_length)
-
-    if "debug_dir" in proc.parameters:
-        start_time = timeit.default_timer()
-
-        plt.scatter(note_length[:,0], note_length[:,1], c = fit.labels_)
-        plt.savefig(os.path.join(proc.parameters["debug_dir"], "clustering_beat_length.tiff"))
-        
-        print("INFO: Creating debug information added an overhead of " + ("%.5f" % (timeit.default_timer() - start_time)) + " seconds")
-
-    # Our assumption here is that the smallest cluster is 1/8 notes, the second smallest thus beeing 1/4 notes
-    # So whatever the length of one of those is, is the conversion factor degree/beats
-
-    proc.beat_length = np.sort(fit.cluster_centers_[:,0])[1]
-
-    return True
-    
-
+from musicbox.helpers import get_lut, make_color_image
 
 def _calculate_angles(shape, center_x, center_y, return_points = False):
     # This is most likely pretty inefficient

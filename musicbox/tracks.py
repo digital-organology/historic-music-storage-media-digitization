@@ -84,35 +84,6 @@ def mean_shift(proc):
 
     return True
 
-def correct_empty_legacy(proc):
-
-    # data_array = np.column_stack((shape_ids, classes, inner_distances))
-
-    # Convert to numpy array and insert dummy first row for the closest track to the center
-    mean_dists = proc.track_distances.copy()
-    mean_dists = np.insert(mean_dists, 0, np.array((1, proc.parameters["first_track"])), 0)
-
-    # Iterate over the array and do the following for each track:
-    # Calculate the distance to the previous track and divide this by the average track width
-    # Round this. Assign the track number of the previous track plus the result of the rounding.
-
-    for i in range(1, mean_dists.shape[0]):
-        dist = mean_dists[i, 1] - mean_dists[i - 1, 1]
-        track_gap = round(dist / proc.parameters["track_width"])
-        mean_dists[i, 0] = mean_dists[i - 1, 0] + track_gap
-
-
-    # Now we replace the track values in the original array with the correct ones
-    # As tracks start with 1 and we use these as index to our mappings we dont even need to remove the dummy first row :-)
-
-    assignments = np.array(list(proc.assignments.items()))
-    copy = assignments.copy()
-    for track in np.unique(assignments[:,1]):
-        copy[:,1][assignments[:,1] == track] = mean_dists[int(track), 0]
-
-    proc.assignments = dict(zip(copy[:,0], copy[:,1]))
-    return True
-
 def correct_empty(proc):
     mean_dists = proc.track_distances.copy()
     mean_dists = np.insert(mean_dists, 0, np.array((0, proc.parameters["first_track"])), 0)

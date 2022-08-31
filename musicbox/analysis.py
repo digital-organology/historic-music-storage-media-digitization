@@ -127,39 +127,6 @@ def _find_simultaneous_notes(note_id, data_array, include_previous = False, incl
 
     return sim_notes
 
-def _notes_to_string(notes_df, as_midi = False, deduplicate = False):
-    notes_df = notes_df.sort_values(by=["midi_note"])
-
-    if as_midi:
-        chord_tones = notes_df["midi_note"].tolist()
-        if deduplicate:
-            chord_tones = list(dict.fromkeys(chord_tones))
-        return "-".join(str(note) for note in chord_tones)
-
-    midi_to_note = midi_to_notes()
-
-    midi_to_note = {
-        0: "C",
-        1: "C#",
-        2: "D",
-        3: "D#",
-        4: "E",
-        5: "F",
-        6: "F#",
-        7: "G",
-        8: "G#",
-        9: "A",
-        10: "Bb",
-        11: "B"
-    }
-
-    chord_tones = [tone % 12 for tone in notes_df["midi_note"].tolist()]
-    if deduplicate:
-        chord_tones = list(dict.fromkeys(chord_tones))
-
-    return "-".join(midi_to_note[note] for note in notes_df["midi_note"].tolist())
-
-
 def _format_chord(notes_df, as_midi = False):
     notes_df = notes_df.sort_values(by=["midi_note"])
     notes_df["base_note"] = notes_df["midi_note"].mod(12)
@@ -280,7 +247,7 @@ def plot_note_frequencies(proc):
     plt.bar(positions, base_note_count, align = "center", alpha = 0.5)
     plt.xticks(positions, base_note_count.index)
     plt.ylabel("Anzahl")
-    plt.title("Notefrequency (ohne Oktaven)")
+    # plt.title("Notefrequency (ohne Oktaven)")
     plt.savefig(os.path.join(proc.parameters["debug_dir"], "base_note_frequencies.png"))
     plt.close()
 
