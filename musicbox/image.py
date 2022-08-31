@@ -15,10 +15,10 @@ def extract_shapes(proc):
     """Creates arrays of coordinates for each labeled component in the processed image
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     # Most fast ways to do this only work on 1d arrays, so we flatten out the array first and get the indices for each unique element then
@@ -43,7 +43,7 @@ def center_mean(proc):
     """Calculates the center point of a disc by using the mean of the outer edge
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """
 
     indices, counts = np.unique(proc.labels, return_counts = True)
@@ -71,7 +71,7 @@ def center_least_squares(proc):
     """Calculated the center point of a disc by fitting an ellipse to the outer edge and finding its center
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """
 
     # First get the outer border as usual
@@ -108,10 +108,10 @@ def labeling(proc):
     """Labels connected components in the image to be processed
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     if proc.parameters["label_distance"] != 1:
@@ -343,10 +343,10 @@ def extract_roll_notes(proc):
     """Extracts the notes present on a piano roll to be processed
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """    
 
     # Notes might warp over their length so we need to calculate the relative positions of each track relative to the position of each note on the roll
@@ -385,10 +385,10 @@ def filter_roll_shapes(proc):
     """Filters out the detected components on an piano roll to include only those representing holes
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """    
 
     shapes_to_keep = []
@@ -467,10 +467,10 @@ def center_manual(proc):
     """Sets the center point of a disc manually from configuration parameters
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     proc.center_x = proc.parameters["center_manual_x"]

@@ -11,10 +11,10 @@ def mean_shift(proc):
     """Use meanshift clustering to segment the holes on a disc into tracks
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     # TODO: We could possibly work with the absolute distance to the outer border which would be affected by warping but not by a wrong center
@@ -100,7 +100,7 @@ def correct_empty(proc):
         proc (_type_): _description_
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     mean_dists = proc.track_distances.copy()

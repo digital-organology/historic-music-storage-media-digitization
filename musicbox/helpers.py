@@ -12,7 +12,7 @@ def get_lut():
     """Loads a lut included in the package that can be used to generate a color image out of an 8-Bit image
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     with files(musicbox.data).joinpath("lut.npy").open("rb") as f:

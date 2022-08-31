@@ -129,10 +129,10 @@ def create_notes(proc):
     """Finds note duration and timing on a cardboard disc
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     shapes = proc.shapes.values()
@@ -215,7 +215,7 @@ def create_midi(proc):
     """Creates a midi file from previously generated music data
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """    
 
     # This way for paper plates

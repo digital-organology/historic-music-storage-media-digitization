@@ -8,10 +8,10 @@ def binarization(proc):
     """Binarizes the input image using threshold binarization
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     _, img_threshold = cv2.threshold(proc.current_image, proc.parameters["bin_threshold"], 255, cv2.THRESH_BINARY)
@@ -23,10 +23,10 @@ def edge_in(proc):
     """Applies morphological edge detection to the input image
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     image = (proc.current_image > 0).astype(np.uint8)
@@ -40,17 +40,19 @@ def edge_in(proc):
     proc.current_image = edges
 
     if "debug_dir" in proc.parameters:
-        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "edges.tiff"), make_color_image(edges.copy()))
+        edge_color = edges.copy()
+        edge_color[edge_color == 1] = 3
+        cv2.imwrite(os.path.join(proc.parameters["debug_dir"], "edges.tiff"), make_color_image(edge_color))
     return True
 
 def crop_to_contents(proc):
     """Crops the input image to the content present
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     y_values, x_values = np.nonzero(proc.current_image)
@@ -69,10 +71,10 @@ def trim_roll_ends(proc):
     """Trims an image of a piano roll to remove everything except the area actually containing holes
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     # Count number of filled pixels per line

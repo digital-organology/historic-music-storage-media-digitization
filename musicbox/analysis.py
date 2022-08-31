@@ -26,7 +26,7 @@ def find_harmonies_bass(proc):
     """Finds chords in the processed medium by finding notes sounding concurrently with bass notes
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """
 
     data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
@@ -68,7 +68,7 @@ def find_harmonies_seq(proc):
     """Finds chords in the processed medium by sequentially walking through all notes and finding the ones that sound concurrently
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """
 
     data = pd.DataFrame(data = proc.data_array, columns = ["note_id", "start_time", "duration", "midi_note"])
@@ -197,7 +197,7 @@ def plot_note_frequencies(proc):
     """Creates plots of the frequencies and lengths each notes appear in the processed medium
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """
 
     plt.ioff()
@@ -293,7 +293,7 @@ def find_last_chords(proc):
     """Finds the last sounding chords on the processed medium
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """    
 
     n = 2
@@ -332,7 +332,7 @@ def make_streamplot(proc):
     """Creates a streamgraph diagram of the processed medium
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
     """
 
     time = [0,30,60,90,120,150,180,210,240,270,300,330,360]

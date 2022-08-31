@@ -10,10 +10,10 @@ def find_disc_edges(proc):
     """Finds the inner and outer edges of a disc
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     # We need to know what area the label is. The config gives us
@@ -60,10 +60,10 @@ def filter_inner(proc):
     """Filter out all detected components on the area to the inside of the area actually containing tracks
 
     Args:
-        proc (_type_): _description_
+        proc (musicbox.Processor.processor): The processor instance that called the method
 
     Returns:
-        _type_: _description_
+        bool: True if successful false otherwise
     """
 
     # This filters everything that is inside the inner label area.
