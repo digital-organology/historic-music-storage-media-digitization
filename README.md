@@ -1,4 +1,4 @@
-# Music box disc digitization
+# Historic music storage media digitization
 
 This repository contains code to automatically generate a midi file out of a high resolution image of historic musical storage media.
 Currently cardboard discs can be processed, configuration files for Ariston type discs as well as ones for an *mechanischer Klaviervorsetzer* are included.
